@@ -1,7 +1,7 @@
 [package]
 name = "TALISM"
 version = "0.0.1"
-description = "nocode tools"
+description = "description"
 authors = ["you"]
 edition = "2021"
 

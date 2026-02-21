@@ -1,6 +1,6 @@
 # 変数
 ROOT_DIR="$(cd "$(dirname "$0")"; pwd)"
-PROJECT_NAME="rename"
+PROJECT_NAME="TALISM"
 PROJECT_VERSION="0.0.1"
 DESCRIPTION="description"
 chmod +x "$ROOT_DIR/shell/resyncIcon.sh"

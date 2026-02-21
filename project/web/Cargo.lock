@@ -3,6 +3,16 @@
 version = 4
 
 [[package]]
+name = "TALISM"
+version = "0.0.1"
+dependencies = [
+ "actix-files",
+ "actix-web",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "actix-codec"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1163,16 +1173,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "taw"
-version = "0.0.1"
-dependencies = [
- "actix-files",
- "actix-web",
- "serde",
- "serde_json",
 ]
 
 [[package]]

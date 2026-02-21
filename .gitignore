@@ -43,3 +43,7 @@ vite.config.ts.timestamp-*
 
 # --sr--
 src/svelte/.svelte-kit/
+dist/web/docker/front/*
+dist/web/docker/*
+dist/web/docker.zip
+dist/app/mac/app.dmg
