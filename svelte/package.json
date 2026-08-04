@@ -1,5 +1,5 @@
 {
-	"name": "svelte",
+	"name": "talism",
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
@@ -21,6 +21,8 @@
 		"vite": "^8.0.16"
 	},
 	"dependencies": {
-		"@ericblade/quagga2": "^1.12.1"
+		"@ericblade/quagga2": "^1.12.1",
+		"@ffmpeg/ffmpeg": "^0.12.15",
+		"@paddleocr/paddleocr-js": "^0.4.2"
 	}
 }
