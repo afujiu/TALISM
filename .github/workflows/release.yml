@@ -96,3 +96,10 @@ jobs:
 
           releaseDraft: false
           prerelease: false
+
+      - name: Remove quarantine attribute on macOS app
+        if: matrix.os == 'macos-latest'
+        run: |
+          if [ -d /Applications/talism.app ]; then
+            xattr -dr com.apple.quarantine /Applications/talism.app
+          fi
