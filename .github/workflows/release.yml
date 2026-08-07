@@ -23,22 +23,37 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: tauri/package-lock.json
 
-      - name: Install dependencies
-        run: npm install
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Run build script
+        working-directory: .
+        shell: bash
+        run: bash ./build.sh
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Build Tauri
         uses: tauri-apps/tauri-action@v0
         with:
           projectPath: tauri
-          args: --target universal-apple-darwin
+          args: --target aarch64-apple-darwin
+
   build:
     strategy:
       fail-fast: false
