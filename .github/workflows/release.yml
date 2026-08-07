@@ -15,6 +15,10 @@ jobs:
   build-mac:
     runs-on: macos-latest
 
+    defaults:
+      run:
+        working-directory: tauri
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,6 +37,7 @@ jobs:
       - name: Build Tauri
         uses: tauri-apps/tauri-action@v0
         with:
+          projectPath: tauri
           args: --target universal-apple-darwin
   build:
     strategy:
