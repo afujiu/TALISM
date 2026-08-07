@@ -25,21 +25,9 @@ for key in ("dependencies", "devDependencies", "scripts"):
 (root / "tauri" / "package.json").write_text(json.dumps(tauri_pkg, indent=2) + "\n")
 PY
 
-
 rm -rf "$ROOT_DIR/tauri/src"
 mkdir -p "$ROOT_DIR/tauri/src"
 cp -R "$ROOT_DIR/svelte/src/." "$ROOT_DIR/tauri/src/"
 
 cd "$ROOT_DIR/tauri"
 npm install
-npm run tauri -- build
-
-mkdir -p "$ROOT_DIR/dist"
-# dmgをdistに保存(tauriのmacdmgをdistに保存)
-DMG_SRC="$ROOT_DIR/tauri/src-tauri/target/release/bundle/dmg/talism_0.1.0_aarch64.dmg"
-if [ -f "$DMG_SRC" ]; then
-  mv "$DMG_SRC" "$ROOT_DIR/dist/talism_0.1.0_aarch64.dmg"
-else
-  echo "DMG file not found: $DMG_SRC"
-  exit 1
-fi

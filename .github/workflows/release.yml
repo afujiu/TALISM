@@ -43,6 +43,10 @@ jobs:
           cache: npm
           cache-dependency-path: tauri/package-lock.json
 
+      - name: Run build script
+        working-directory: .
+        run: ./build.sh
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
