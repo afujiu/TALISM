@@ -99,7 +99,16 @@ jobs:
 
       - name: Remove quarantine attribute on macOS app
         if: matrix.os == 'macos-latest'
+        shell: bash
         run: |
+          set -euo pipefail
+
           if [ -d /Applications/talism.app ]; then
+            echo "Removing quarantine from /Applications/talism.app"
             xattr -dr com.apple.quarantine /Applications/talism.app
           fi
+
+          while IFS= read -r -d '' app_path; do
+            echo "Removing quarantine from $app_path"
+            xattr -dr com.apple.quarantine "$app_path" || true
+          done < <(find "$GITHUB_WORKSPACE" -type d -name '*.app' -print0)
