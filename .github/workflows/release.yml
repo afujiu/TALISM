@@ -12,6 +12,28 @@ permissions:
   contents: write
 
 jobs:
+  build-mac:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build Tauri
+        uses: tauri-apps/tauri-action@v0
+        with:
+          args: --target universal-apple-darwin
   build:
     strategy:
       fail-fast: false
