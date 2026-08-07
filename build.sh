@@ -5,7 +5,16 @@ cd "$ROOT_DIR"
 
 export ROOT_DIR
 
-python3 - <<'PY'
+if command -v python3 >/dev/null 2>&1; then
+  PYTHON_BIN=python3
+elif command -v python >/dev/null 2>&1; then
+  PYTHON_BIN=python
+else
+  echo "Python 3 is required but was not found on PATH." >&2
+  exit 1
+fi
+
+"$PYTHON_BIN" - <<'PY'
 import json
 import os
 from pathlib import Path
