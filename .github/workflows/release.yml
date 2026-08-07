@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - develop
+
 permissions:
   contents: write
 
@@ -78,22 +79,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CI: true
-          APPLE_SIGNING_IDENTITY: ""
-          APPLE_CERTIFICATE: ""
-          APPLE_CERTIFICATE_PASSWORD: ""
-          APPLE_ID: ""
-          APPLE_APP_SPECIFIC_PASSWORD: ""
-          APPLE_TEAM_ID: ""
+
         with:
           projectPath: tauri
           args: ${{ matrix.build-args || '' }}
+
           tagName: ${{ github.ref_name }}
           releaseName: TALISM ${{ github.ref_name }}
+
           releaseBody: |
             ## Downloads
 
             - Windows (.exe / .msi)
-            - macOS (.app / .dmg)
+            - macOS (.app)
             - Linux (.AppImage / .deb)
 
           releaseDraft: false
