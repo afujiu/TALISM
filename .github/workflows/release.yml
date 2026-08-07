@@ -78,6 +78,7 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CI: true
         with:
           projectPath: tauri
           args: ${{ matrix.build-args || '' }}
