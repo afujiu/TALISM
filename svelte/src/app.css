@@ -1,0 +1,61 @@
+:root {
+	--base-gray1:rgb(233, 233, 233);
+}
+
+/* タブレットでの長押しによるズームを無効化 */
+html, body {
+	font-size:1em;
+	height: 100%;
+}
+
+html {
+	overflow: hidden;
+}
+
+body{
+	font-family: "Noto Sans JP", sans-serif;
+	margin:0;
+	padding:0;
+	width:100vw;
+	height:var(--app-height);
+	min-height:var(--app-height);
+	overflow:hidden;
+}
+
+/*
+スクロールバー非表示
+*/
+.non-scroll-bar {
+	overflow: auto;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+}
+.non-scroll-bar::-webkit-scrollbar {
+	display: none;
+}
+
+
+.container{
+	display:flex;
+}
+.f1{
+	flex: 1;
+}
+.f2{
+	flex: 2;
+}
+.f3{
+	flex: 3;
+}
+.f4{
+	flex: 4;
+}
+.f5{
+	flex: 5;
+}
+.f6{
+	flex: 6;
+}
+.f7{
+	flex: 7;
+}

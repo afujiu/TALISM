@@ -13,6 +13,10 @@ permissions:
 
 jobs:
   build:
+    env:
+      PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
+      PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
+
     strategy:
       fail-fast: false
       matrix:
@@ -79,7 +83,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CI: true
-
         with:
           projectPath: tauri
           args: ${{ matrix.build-args || '' }}

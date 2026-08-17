@@ -47,3 +47,4 @@ dist/web/docker/front/*
 dist/web/docker/*
 dist/web/docker.zip
 dist/app/mac/app.dmg
+svelte/.env.example

@@ -16,5 +16,14 @@ export default defineConfig({
 			// See https://svelte.dev/docs/kit/adapters for more information about adapters.
 			adapter: adapter()
 		})
-	]
+	],
+	// server: {
+	// 	port: 8964
+	// },
+	resolve: {
+		alias: {
+			$lib: '/src/lib',
+			$comp:'/src/lib/components',
+		}
+	},
 });

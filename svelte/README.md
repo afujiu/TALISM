@@ -1,24 +1,30 @@
-# sv
+# TALISM
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+SvelteKit project with Supabase configuration.
 
-## Creating a project
+## Supabase setup
 
-If you're seeing this, you've probably already done this step. Congrats!
+Create a `.env.local` file from the example and fill in your project values:
 
-```sh
-# create a new project
-npx sv create my-app
+```bash
+cp .env.example .env.local
 ```
 
-To recreate this project with the same configuration:
-
-```sh
-# recreate this project
-npx sv@0.17.0 create --template minimal --types jsdoc --install npm svelte
+```env
+PUBLIC_SUPABASE_URL="https://your-project-id.supabase.co"
+PUBLIC_SUPABASE_PUBLISHABLE_KEY="your-publishable-key"
 ```
 
-## Developing
+The client is initialized in `src/lib/supabase.js` and can be imported as:
+
+```js
+import { getSupabase } from '$lib/supabase';
+
+const supabase = getSupabase();
+const { data, error } = await supabase.from('profiles').select('*');
+```
+
+## Development
 
 Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
 

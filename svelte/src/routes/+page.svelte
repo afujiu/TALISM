@@ -1,1 +1,10 @@
-<h1>hellow TALISM exe</h1>
+<!-------------------------------
+LP画面
+--------------------------------->
+<script>
+</script>
+<article>
+	<h1>TALIST LP</h1>
+</article>
+<style>
+</style>
