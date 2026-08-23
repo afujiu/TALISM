@@ -1,0 +1,117 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - develop
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    env:
+      PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
+      PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            build-args: --target aarch64-apple-darwin --bundles dmg,app
+
+    runs-on: ${{ matrix.os }}
+
+    defaults:
+      run:
+        working-directory: tauri
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tauri/package-lock.json
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+
+      - name: Run build script
+        working-directory: .
+        shell: bash
+        run: bash ./build.sh
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install Linux dependencies
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libssl-dev \
+            libgtk-3-dev
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and Release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CI: true
+        with:
+          projectPath: tauri
+          args: ${{ matrix.build-args || '' }}
+
+          tagName: ${{ github.ref_name }}
+          releaseName: TALISM ${{ github.ref_name }}
+
+          releaseBody: |
+            ## Downloads
+
+            - Windows (.exe / .msi)
+            - macOS (.app)
+            - Linux (.AppImage / .deb)
+
+          releaseDraft: false
+          prerelease: false
+
+      - name: Remove quarantine attribute on macOS app
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -d /Applications/talism.app ]; then
+            echo "Removing quarantine from /Applications/talism.app"
+            xattr -dr com.apple.quarantine /Applications/talism.app
+          fi
+
+          while IFS= read -r -d '' app_path; do
+            echo "Removing quarantine from $app_path"
+            xattr -dr com.apple.quarantine "$app_path" || true
+          done < <(find "$GITHUB_WORKSPACE" -type d -name '*.app' -print0)
