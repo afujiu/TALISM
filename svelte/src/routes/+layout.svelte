@@ -17,6 +17,6 @@
 	left:0;
 	right:0;
 	overflow:hidden!important;
-	height:100vh;
+	height:100dvh;
 }
 </style>
