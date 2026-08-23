@@ -29,4 +29,10 @@ export default defineConfig(async () => ({
       ignored: ["**/src-tauri/**"],
     },
   },
+	resolve: {
+		alias: {
+			$lib: '/src/lib',
+			$comp:'/src/lib/components',
+		}
+	},
 }));
