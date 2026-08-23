@@ -82,7 +82,7 @@
 	:root {
 		--header-height:2em;
 		--footer-height:1.2em;
-		--app-height: 100vh;
+		--app-height: 100dvh;
 		--nav-width:15em;
 		--xs-nav-width:80%;
 	}
