@@ -21,8 +21,11 @@ body{
 	margin:0;
 	padding:0;
 	width:100vw;
-	height:100vh;
+	height: 100dvh;
+	min-height: 100dvh;
 	overflow:hidden;
+	-webkit-touch-callout: none; /* 長押しメニューを無効化 */
+	touch-action: none;         /* すべてのタッチ操作を無効化 */
 }
 
 /*
