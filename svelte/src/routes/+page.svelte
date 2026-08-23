@@ -29,9 +29,9 @@
 			}
     }
 </script>
-
 <div class="login">
-    <h1>ログイン</h1>
+		
+    <h1>TALISM ログイン</h1>
     <form
 			on:submit={(e) => {
 				e.preventDefault()
