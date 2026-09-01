@@ -4,7 +4,7 @@
 <script>
 	import { onMount, onDestroy } from 'svelte'
 	import { account,ui } from '$lib/store'
-	import Input from '$comp/Input.svelte'
+	import Fab from '$comp/Fab.svelte'
 
 	let val=$state('')
 	onMount(async () => {
@@ -12,20 +12,22 @@
 	})
 </script>
 <article>
-<div class="flex">
-	<div class="f1">
-		<Input bind:value={val} type="number" step=10 min=10 max=50 placeholder="これは" readonly></Input>
-	</div>
-	<div class="f1">
-		<Input bind:value={val} type="textarea" placeholder="これは"></Input>
-	</div>
-	<div class="f1">c</div>
-</div>
-{val}
+	a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>
+	a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>
+	a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>
+	a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>
+	a<br>a<br>a<br>a<br>a<br>
+	adfsadffdsfdasfdsafdasfaaadfsadffdsfdasfdsafdasfaaadfsadffdsfdasfdsafdasfaaadfsadffdsfdasfdsafdasfaa<br>
+	a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>
+	a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>a<br>F<br>
+	<Fab>
+		<span class="f1">
+			<button class="btn reset-btn">Reset</button>
+		</span>
+		<span class="f1">
+			<button class="btn confirm-btn">Save</button>
+		</span>
+	</Fab>
 </article>
 <style>
-	.f1{
-		border:solid 1px;
-		height:400px;
-	}
 </style>

@@ -6,12 +6,14 @@
     import { goto } from '$app/navigation'
 		import { account,ui } from '$lib/store'
 		import { page } from '$app/state'
-		import Icon from '$comp/Icon.svelte'
 		import packageJson from '../../../package.json'
+		import Icon from '$comp/Icon.svelte'
 		let { children } = $props()
 
+		/**
+		 * 各ページ遷移時
+		*/
 		$effect(async() => {
-			console.log(page.url.pathname)
 			if(!await $account.checkLogin()){
 				goto('/')
 				return
@@ -19,19 +21,33 @@
 		})
 
 		let isLoading=$state(false)
+
+		/**
+		 * ログインチェック
+		*/
     onMount(async () => {
     	$account.watchLoginState(()=>{
 				goto('/')
 				return
 			})
-			console.log('check')
+			const resultMenus = await $account.getDb('menus')
+			const resultSettings = await $account.getDb('settings')
+			if(resultMenus.ok&&resultSettings.ok){
+				$account.setSettings(resultSettings.data)
+				$ui.setSettings(resultSettings.data,resultMenus.data)
+			}else{
+				goto('/')
+				return 
+			}
 			isLoading=true
     })
 
-    async function logout() {
-        $account.logout()
-        await goto('/')
-    }
+		function move(path){
+			if($ui.isMobileSize){
+				$ui.isOpenMenu=false
+			}
+			goto(path)
+		}
 </script>
 <!-- ヘッダー -->
 	<header>
@@ -39,7 +55,7 @@
 			<button class="icon"
 				onclick={()=>{ $ui.isOpenMenu =!$ui.isOpenMenu }}
 			><Icon value='menu'></Icon></button>
-			<h1>{$ui.selectedMenuName}</h1>
+			<span>{$ui.selectedMenuName}</span>
 		</div>
 		<div class="right">
 			<button class="icon">	<Icon value='notifications'></Icon></button>
@@ -47,18 +63,22 @@
 	</header>
 <!-- メニュー -->
 	<nav class="{$ui.isOpenMenu?'active':''}">
-	<div class="menu-block">
-		{#each $ui.showCategoryMenuList as category}
-			<h4>{category.name}</h4>
-			<div>
-				{#each category.menu as menu}
-					<a href="a">{menu.name}</a>
-				{/each}
-			</div>
-		{/each}
-		</div>
+	{#if isLoading}
+		<div class="menu-block">
+			{#each $ui.showCategoryMenuList as category}
+				<h4>{category.name}</h4>
+				<div>
+					{#each category.menu as menu}
+						<a onclick={()=>{ move(`/main/${menu.key}`)}}>{menu.name}</a>
+					{/each}
+				</div>
+			{/each}
+	</div>
+	{/if}
 	<div class="account-setting">
-		<button><Icon value="settings"></Icon>
+		<button
+			onclick={()=>{move('/main/account')}}
+		><Icon value="settings"></Icon>
 			<span>アカウント</span>
 		</button>
 	</div>
@@ -101,13 +121,13 @@
 		flex:1;
 		height:100%;
 	}
-	header .left h1{
+	header .left span{
+		display:inline-block;
+		position:absolute;
 		height:100%;
 		top:0;
-		display:inline-block;
-		font-size:1.2em;
+		bottom:0;
 		vertical-align: middle;
-		padding-bottom:0.5em;
 		margin:0;
 	}
 	header .right{
@@ -130,12 +150,14 @@
 	nav.active{
 		left:0;
 	}
+
 	nav .menu-block{
-		
 		width:100%;
+		height:calc(100% - 2em);
 		padding-left:1em;
 		overflow:auto;
 	}
+
 	nav .account-setting{
 		height:10%;
 	}
@@ -250,13 +272,13 @@ button{
   user-select: none;
   -webkit-user-select: none;
 	-webkit-tap-highlight-color: transparent;
-	  -webkit-touch-callout: none;
+	-webkit-touch-callout: none;
   user-select: none;
   -webkit-user-select: none;
 }
 button:hover,button:focus{
 	box-shadow: 0px 1px 2px 1px black;
-	filter: brightness(1.1);
+	filter: brightness(1.2);
 }
 
 button:hover *,button:focus *{
