@@ -17,9 +17,9 @@ export default defineConfig({
 			adapter: adapter()
 		})
 	],
-	// server: {
-	// 	port: 8964
-	// },
+	server: {
+		port: 8964
+	},
 	resolve: {
 		alias: {
 			$lib: '/src/lib',
