@@ -13,6 +13,7 @@ export class UiClass{
 			menuEditFunc:null
 		})
 	}
+
 	get selectedMenuName(){
 		const pathname = page.url.pathname
 		let path = pathname.replace("/main/", "")
@@ -27,6 +28,16 @@ export class UiClass{
 		}
 		return `【${menu.category}】${menu.name}`
 	}
+	/**
+	 * 選択中のメニュー
+	 */
+	get selectedMenuKey(){
+		const pathname = page.url.pathname
+		let path = pathname.replace("/main/", "")
+		path = path.replace("/main", "")
+		return path
+	}
+
 	get isOpenMenu(){
 		return this.mem.isOpenMenu
 	}
@@ -105,7 +116,18 @@ export class UiClass{
 		const obj = this.mem.notificationList.find(v => v.uuid == uuid)
 		if(obj!=undefined){
 			obj.func()
+			this.mem.showNotification=true
+			setTimeout(()=>{
+				this.mem.showNotification=false
+			},4000)
 		}
+	}
+
+	get notification(){
+		return this.mem.showNotification
+	}
+	set notification(notification){
+		this.mem.showNotification = notification
 	}
 	/**
 	 * 通知リスト

@@ -80,7 +80,7 @@ section article{
 	height:100%;
 	border:none;
 	cursor:pointer;
-	transition: filter 2s ease;
+	transition: filter 0.5s ease;
 }
 .btn:hover,.btn:focus{
 	box-shadow:0px 0px 5px rgba(0,0,0,1);
@@ -88,7 +88,8 @@ section article{
 }
 
 .btn:active{
-
+	box-shadow:inset 0px 1px 0px rgba(0,0,0,1);
+	filter: brightness(0.8);
 }
 
 .reset-btn{

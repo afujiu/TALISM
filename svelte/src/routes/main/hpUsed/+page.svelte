@@ -10,8 +10,8 @@
 	 * argument
 	*/
 
-	const KV_KEY='usedList_bk'
-	const MEDIA_URL='usedMedia_bk'
+	const KV_KEY='usedList'
+	const MEDIA_URL='usedMedia'
 	let isLoading=$state(true)
 	let isSaving=$state(false)
 	let spread=new SpreadsheetClass()
@@ -71,7 +71,11 @@
 	 * 保存
 	 */
 	async function save(){
-		$ui.addNotification(`${$ui.selectedMenuName} 更新`,async()=>{
+			if(window.confirm("更新しますか")==false){
+				return
+			}
+
+		$ui.addNotification(`${$ui.selectedMenuName} 中古情報の更新`,async()=>{
 			isSaving=true
 			const errorList = spread.checkError()
 			if(errorList.length>0){
@@ -196,10 +200,10 @@
 	<Spreadsheet bind:value={spread}></Spreadsheet>
 	<Fab>
 		<span class="f1">
-			<button class="btn reset-btn" disabled={isSaving} onclick={async()=>{await reset()}}>Reset</button>
+			<button tabindex=-1 class="btn reset-btn" disabled={isSaving} onclick={async()=>{await reset()}}>Reset</button>
 		</span>
 		<span class="f1">
-			<button class="btn confirm-btn" disabled={isSaving} onclick={async()=>{await save()}}>Save</button>
+			<button tabindex=-1 class="btn confirm-btn" disabled={isSaving} onclick={async()=>{await save()}}>Save</button>
 		</span>
 	</Fab>
 

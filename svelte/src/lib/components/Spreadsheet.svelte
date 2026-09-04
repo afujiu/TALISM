@@ -330,7 +330,8 @@
 						<th class="data-th" style={header.width == null || header.width === undefined ? undefined : `width:${header.width}px`}>
 							<div class="table-header-cell">
 								<textarea class="table-header-resize {value.filterList[header.id].hasFilter(value.filterList[header.id])?'has-filter':''}" value={header.name} readonly
-								onclick={()=>{contentMenuHeader=header.id}}
+									ondblclick={()=>{contentMenuHeader=header.id}}
+									ontouchend={()=>{contentMenuHeader=header.id}}
 								></textarea>
 								<button class="sort-button" onclick={() => value.sortBy(header.id)}>
 								<span class="material-symbols-outlined">
@@ -344,17 +345,17 @@
 								</span>
 								</button>
 							</div>
+							<!-- フィルター-->
 							<ContentsMenu
 								id={header.id}
 								on:close={()=>{contentMenuHeader=null}}
 								value={contentMenuHeader==header.id}>
 								<div class="flex" style="width:100%;">
+									<h4>フィルター</h4>
 									{#if header.type=='datetime'}
-										<input type="date" onchange={(e)=>{}}>
-									{:else if header.type=='time'}
-									{:else if header.type=='date'}
-										<input type="date"  onchange={(e)=>{}}>
-										<input type="date" min="2026-07-10" max="2026-08-10" onchange={(e)=>{}}>
+										{header.type}
+										<input type="date"  onchange={(e)=>{value.filterList[header.id].start}}>
+										<input type="date"  onchange={(e)=>{value.filterList[header.id].end}}>
 									{:else if header.type=='number'}
 										<input type="number" class="f1" style="width:40%;" bind:value={value.filterList[header.id].start}/>
 										<span class="f1">〜</span>
@@ -438,7 +439,7 @@
 				<tr>
 					<td colspan={value.headerList.length+1}>
 						<button onclick={()=>{value.addList()}}
-							class="add material-symbols-outlined">add</button>
+							class="btn add material-symbols-outlined">add</button>
 					</td>
 				</tr>
 			</tbody>
@@ -493,7 +494,7 @@
 	td textarea:focus,
 	td select:focus{
 		border-radius:0;
-		background:rgb(214, 225, 255);
+		background:rgb(224, 235, 255);
 		outline: none;
 	}
 
@@ -525,14 +526,17 @@
 		min-width:4em;
 		background:var(--main1);
 	}
+
 	.add{
 		width:100%;
 		font-size:2em;
-		color:var(--confirm);
-		background:white;
+		color:white;
+		background:var(--confirm);
+		opacity:0.9;
 		border:none;
 		cursor:pointer;
 	}
+	
 	.table-header-resize{
 		background:transparent;
     resize: horizontal;
@@ -540,6 +544,11 @@
 		height:1em;
 		font-weight: 500;
 		cursor:pointer;
+	}
+	.table-header-resize::-webkit-resizer {
+		padding:0;
+		margin:0;
+		background:var(--main1);
 	}
 	.table-header-cell{
 		display:flex;
