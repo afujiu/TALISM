@@ -32,11 +32,28 @@
     // 状態
     // ----------------------------------------
 
+    /** @type {HTMLVideoElement} */
     let videoElement
 
     let pc = null
+    const pendingCandidates = []
 
-    let status = '未接続'
+    async function toggleFullscreen() {
+        if (document.fullscreenElement) {
+            await document.exitFullscreen()
+            return
+        }
+
+        if (videoElement.requestFullscreen) {
+            await videoElement.requestFullscreen()
+        } else {
+            /** @type {{ webkitEnterFullscreen?: () => void }} */
+            const video = videoElement
+            video.webkitEnterFullscreen?.()
+        }
+    }
+
+    let status = $state('未接続')
 
 
     // ----------------------------------------
@@ -102,11 +119,17 @@
         if (data.type === 'candidate') {
 
             if (!pc) {
+                pendingCandidates.push(data)
                 return
             }
 
 
             try {
+
+                if (!pc.remoteDescription) {
+                    pendingCandidates.push(data)
+                    return
+                }
 
                 await pc.addIceCandidate(
                     new RTCIceCandidate(
@@ -138,7 +161,9 @@
 
         // PeerConnection作成
         pc = new RTCPeerConnection({
-            iceServers: []
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' }
+            ]
         })
 
 
@@ -231,6 +256,13 @@
             )
         )
 
+        for (const candidate of pendingCandidates) {
+            await pc.addIceCandidate(
+                new RTCIceCandidate(candidate.candidate)
+            )
+        }
+        pendingCandidates.length = 0
+
 
         // ------------------------------------
         // Answer作成
@@ -293,14 +325,15 @@
     <p>
         ID：{myId}
     </p>
-
+    <button type="button" onclick={toggleFullscreen}>
+        全画面表示
+    </button>
     <video
         bind:this={videoElement}
         autoplay
         playsinline
         controls={false}
     ></video>
-
 </div>
 
 
@@ -313,5 +346,10 @@
         width: 100%;
         max-width: 800px;
         background: #000;
+    }
+
+    button {
+        display: block;
+        margin-top: 8px;
     }
 </style>
