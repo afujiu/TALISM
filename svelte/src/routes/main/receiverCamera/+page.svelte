@@ -47,10 +47,30 @@
         if (videoElement.requestFullscreen) {
             await videoElement.requestFullscreen()
         } else {
-            /** @type {{ webkitEnterFullscreen?: () => void }} */
-            const video = videoElement
+            const video = /** @type {{ webkitEnterFullscreen?: () => void }} */
+                (/** @type {unknown} */ (videoElement))
             video.webkitEnterFullscreen?.()
         }
+    }
+
+    async function playVideo() {
+        if (!videoElement?.srcObject) {
+            return
+        }
+
+        try {
+            videoElement.load()
+            await videoElement.play()
+            status = '映像受信中'
+        } catch (error) {
+            console.error('映像再生エラー:', error)
+            status = '映像を再生するにはボタンを押してください'
+        }
+    }
+
+    async function enableAudio() {
+        videoElement.muted = false
+        await playVideo()
     }
 
     let status = $state('未接続')
@@ -171,7 +191,7 @@
         // 映像受信
         // ------------------------------------
 
-        pc.ontrack = (event) => {
+        pc.ontrack = async (event) => {
 
             console.log(
                 '映像受信:',
@@ -184,8 +204,9 @@
                 event.streams[0]
             ) {
 
-                videoElement.srcObject =
-                    event.streams[0]
+                videoElement.srcObject = event.streams[0] ?? new MediaStream([event.track])
+                videoElement.muted = true
+                playVideo()
             }
         }
 
@@ -328,9 +349,16 @@
     <button type="button" onclick={toggleFullscreen}>
         全画面表示
     </button>
+    <button type="button" onclick={playVideo}>
+        映像を再生
+    </button>
+    <button type="button" onclick={enableAudio}>
+        音声を有効化
+    </button>
     <video
         bind:this={videoElement}
         autoplay
+        muted
         playsinline
         controls={false}
     ></video>
