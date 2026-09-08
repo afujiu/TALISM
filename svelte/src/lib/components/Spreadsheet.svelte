@@ -557,6 +557,7 @@
 	}
 	.sort-button{
 		padding:0;
+		width:1em;
 		border:none;
 		background:transparent;
 		color:var(--base1);

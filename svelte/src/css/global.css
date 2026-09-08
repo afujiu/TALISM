@@ -3,7 +3,7 @@
 	--base2:rgb(162, 168, 173);
 	--main1:rgb(213, 215, 220);
 	--accent1:rgb(233, 233, 233);
-	--confirm:rgba(49, 87, 201,0.85);
+	--confirm:rgba(34, 79, 212, 0.85);
 	--reset:rgba(124, 125, 123,0.85);
 	--warning:rgb(255, 0, 0);
 }
@@ -28,6 +28,14 @@ body{
 	-webkit-touch-callout: none; /* 長押しメニューを無効化 */
 	touch-action: none;         /* すべてのタッチ操作を無効化 */
 }
+section article{
+	width:100%;
+	height:100%;
+	overflow:auto;
+}
+
+
+
 
 /*
 スクロールバー非表示
@@ -41,7 +49,9 @@ body{
 	display: none;
 }
 
-
+/**
+フレックス
+**/
 .flex{
 	display:flex;
 }
@@ -67,12 +77,19 @@ body{
 	flex: 7;
 }
 
-section article{
-	width:100%;
-	height:100%;
-	overflow:auto;
+/**
+汎用
+**/
+.align-center{
+	text-align:center;
+}
+.align-right{
+	text-align:right;
 }
 
+/***
+
+****/
 .btn{
 	padding:0;
 	margin:0;
@@ -109,3 +126,108 @@ section article{
 	backdrop-filter: blur(2px);
 	-webkit-backdrop-filter: blur(2px);
 }
+
+/****************************
+* テーブル
+*/
+	table{
+		border-spacing: 0;
+	}
+	th{
+		background:var(--main1);
+	}
+	th,td{
+		height:1em;
+		margin:0;
+		border-collapse: collapse;
+		border:dashed 0.5px;
+		border-color:black;
+		background:transparent;
+	}
+	tr.selected{
+		background:var(--selected-blue-color);
+	}
+
+	thead{
+		position:sticky;
+		position:-webkit-sticky;
+		top:0;
+		background:transparent;
+		
+	}
+
+	td input,
+	td textarea,
+	td select,
+	td .media{
+		width: calc(100%);
+		height:calc(100%);
+		border:none;
+		background:white;
+		border-radius: 0;
+		box-sizing: border-box;
+	}
+
+
+	td input:focus,
+	td textarea:focus,
+	td select:focus{
+		border-radius:0;
+		background:rgb(224, 235, 255);
+		outline: none;
+	}
+
+
+
+	td input:read-only,
+	td textarea:read-only{
+		background:var(--main);
+	}
+
+	.first-td{
+		position:sticky;
+		position:-webkit-sticky;
+		left:0;
+		width:4em;
+		height:100%;
+		background:var(--main1);
+		text-align:center;
+	}
+
+	.first-td button{
+		width:100%;
+		background:var(--main1);
+		border:none;
+		cursor:pointer;
+	}
+
+	.data-th{
+		min-width:4em;
+		background:var(--main1);
+	}
+	
+	.table-header-resize{
+		background:transparent;
+    resize: horizontal;
+		border:none;
+		height:1em;
+		font-weight: 500;
+		cursor:pointer;
+	}
+	.table-header-resize::-webkit-resizer {
+		padding:0;
+		margin:0;
+		background:var(--main1);
+	}
+	.table-header-cell{
+		display:flex;
+		align-items:center;
+		gap:0.25em;
+	}
+
+	.def-btn{
+		width:100%;
+		height:100%;
+		cursor:pointer;
+		border:none;
+	}

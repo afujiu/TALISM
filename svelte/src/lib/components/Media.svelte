@@ -245,6 +245,9 @@
 	overflow-x:scroll;
 }
 
+button{
+	background:transparent;
+}
 .media-input .scroll button{
 	width:1.5em;
 	height:1.5em;

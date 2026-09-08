@@ -54,7 +54,7 @@
 		min-width:200px;
 		min-height:200px;
 		max-height:50%;
-		background:white;
+		background:var(--main1);
 		z-index:992;
 	}
 	.popup-title{
