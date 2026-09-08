@@ -47,10 +47,9 @@ export class UiClass{
 
 	get showCategoryMenuList(){
 		let menu = []
-		const categoryList = this.mem.settings['category'].value
+		const categoryList = this.mem.settings['menu_category'].value
 		for(let  category of categoryList){
 			const oneCategoryMenu = this.mem.menuList.filter(v=>v.category==category)
-			console.log(this.mem.menuList)
 			if(oneCategoryMenu.length>0){
 				menu.push({name:category,menu:oneCategoryMenu})
 			}
@@ -63,7 +62,6 @@ export class UiClass{
 	 * @param {*} settings 
 	 */
 	setSettings(srgSettings,menuList){
-		console.log(menuList)
 		let settings ={}
 		for(let setting of srgSettings){
 			settings[setting.key] = {name:setting.name,value:setting.value}

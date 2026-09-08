@@ -116,6 +116,26 @@ export class AccountClass{
 		}
 	}
 
+
+		/**
+	 * DBにデータ登録+修正
+	 * @param {*} from 
+	 * @param {*} insertData 
+	 * return {ok:true or false,data:data,message:message}
+	 */
+	async upsertDb(from,insertData,onConflict=''){
+		const { data, error } = await supabase
+    .from(from)
+    .upsert(insertData, {
+    	onConflict: onConflict
+    })
+		if (error) {
+				return {ok:false,data:null,message:error.message}
+		} else {
+				return {ok:true,data:data,message:'登録成功'}
+		}
+	}
+
 	/**
 	 * DBのデータ更新
 	 * @param {*} from
