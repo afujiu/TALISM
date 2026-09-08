@@ -13,25 +13,26 @@ export async function connectBroadcast(room, callback) {
 
     channel = supabase
         .channel(room)
-
         .on(
             'broadcast',
             { event: 'signal' },
             ({ payload }) => {
-
                 console.log('Broadcast受信:', payload)
-
-                if (callback) {
-                    callback(payload)
-                }
+                if (callback) callback(payload)
             }
         )
 
-        .subscribe((status) => {
-
+    await new Promise((resolve, reject) => {
+        channel.subscribe((status, error) => {
             console.log('Broadcast status:', status)
 
+            if (status === 'SUBSCRIBED') {
+                resolve()
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                reject(error ?? new Error(`Broadcast接続失敗: ${status}`))
+            }
         })
+    })
 
     return channel
 }

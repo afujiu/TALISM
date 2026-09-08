@@ -35,8 +35,9 @@
     let videoElement
 
     let pc = null
+    const pendingCandidates = []
 
-    let status = '未接続'
+    let status = $state('未接続')
 
 
     // ----------------------------------------
@@ -102,11 +103,17 @@
         if (data.type === 'candidate') {
 
             if (!pc) {
+                pendingCandidates.push(data)
                 return
             }
 
 
             try {
+
+                if (!pc.remoteDescription) {
+                    pendingCandidates.push(data)
+                    return
+                }
 
                 await pc.addIceCandidate(
                     new RTCIceCandidate(
@@ -138,7 +145,9 @@
 
         // PeerConnection作成
         pc = new RTCPeerConnection({
-            iceServers: []
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' }
+            ]
         })
 
 
@@ -230,6 +239,13 @@
                 data.sdp
             )
         )
+
+        for (const candidate of pendingCandidates) {
+            await pc.addIceCandidate(
+                new RTCIceCandidate(candidate.candidate)
+            )
+        }
+        pendingCandidates.length = 0
 
 
         // ------------------------------------

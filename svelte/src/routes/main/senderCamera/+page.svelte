@@ -25,12 +25,13 @@
 
   let stream = null
 
-  let status = "未接続"
+  let status = $state("未接続")
 
   let viewerConnected = false
 
   // viewerごとのPeerConnection
   const peers = new Map()
+  const pendingCandidates = new Map()
 
   // ----------------------------------------
   // 初期化
@@ -90,6 +91,12 @@
 
       await pc.setRemoteDescription(new RTCSessionDescription(data.sdp))
 
+      const candidates = pendingCandidates.get(data.from) ?? []
+      for (const candidate of candidates) {
+        await pc.addIceCandidate(new RTCIceCandidate(candidate))
+      }
+      pendingCandidates.delete(data.from)
+
       viewerConnected = true
 
       status = "接続済み"
@@ -106,6 +113,12 @@
       }
 
       try {
+        if (!pc.remoteDescription) {
+          const candidates = pendingCandidates.get(data.from) ?? []
+          candidates.push(data.candidate)
+          pendingCandidates.set(data.from, candidates)
+          return
+        }
         await pc.addIceCandidate(new RTCIceCandidate(data.candidate))
       } catch (error) {
         console.error("ICE Candidate error:", error)
@@ -123,6 +136,8 @@
 
         peers.delete(data.from)
       }
+
+      pendingCandidates.delete(data.from)
 
       viewerConnected = false
 
@@ -143,7 +158,7 @@
     console.log("PeerConnection作成:", viewerId)
 
     const pc = new RTCPeerConnection({
-      iceServers: [],
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
     })
 
     peers.set(viewerId, pc)
