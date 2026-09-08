@@ -73,6 +73,22 @@
         await playVideo()
     }
 
+    async function reconnect() {
+        status = '再接続中...'
+
+        if (pc) {
+            pc.close()
+            pc = null
+        }
+
+        pendingCandidates.length = 0
+        videoElement.srcObject = null
+
+        await sendLeave(myId)
+        await sendJoin(myId)
+        status = '発信者を待機中...'
+    }
+
     let status = $state('未接続')
 
 
@@ -354,6 +370,9 @@
     </button>
     <button type="button" onclick={enableAudio}>
         音声を有効化
+    </button>
+    <button type="button" onclick={reconnect}>
+        再接続
     </button>
     <video
         bind:this={videoElement}
