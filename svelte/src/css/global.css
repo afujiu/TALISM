@@ -87,6 +87,15 @@ section article{
 	text-align:right;
 }
 
+/**
+文字を改行
+**/
+.break-word{
+	overflow-wrap: break-word!important;
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
+
 /***
 
 ****/
@@ -127,11 +136,29 @@ section article{
 	-webkit-backdrop-filter: blur(2px);
 }
 
+.btn:disabled{
+	border:none;
+	box-shadow:0px 0px 0px rgba(0,0,0,0)!important;
+	filter: brightness(0.1);
+}
 /****************************
 * テーブル
 */
 	table{
 		border-spacing: 0;
+		position:relative;
+		width: max-content;
+		table-layout: fixed;
+	}
+	thead{
+		height:2em;
+		background:transparent;
+		position:sticky;
+		position:-webkit-sticky;
+		z-index:800;
+	}
+	thead th{
+		background:var(--main1);
 	}
 	th{
 		background:var(--main1);
@@ -144,16 +171,15 @@ section article{
 		border-color:black;
 		background:transparent;
 	}
-	tr.selected{
-		background:var(--selected-blue-color);
+	tbody tr:nth-child(even):not(.selected){
+		filter: brightness(0.99);
+	}
+		tbody tr:nth-child(even):not(.selected) *{
+		filter: brightness(0.99);
 	}
 
-	thead{
-		position:sticky;
-		position:-webkit-sticky;
-		top:0;
-		background:transparent;
-		
+	tr.selected{
+		background:var(--selected-blue-color);
 	}
 
 	td input,
@@ -168,7 +194,6 @@ section article{
 		box-sizing: border-box;
 	}
 
-
 	td input:focus,
 	td textarea:focus,
 	td select:focus{
@@ -176,8 +201,6 @@ section article{
 		background:rgb(224, 235, 255);
 		outline: none;
 	}
-
-
 
 	td input:read-only,
 	td textarea:read-only{
@@ -188,7 +211,7 @@ section article{
 		position:sticky;
 		position:-webkit-sticky;
 		left:0;
-		width:4em;
+		width:2em;
 		height:100%;
 		background:var(--main1);
 		text-align:center;

@@ -13,7 +13,7 @@
   // 設定
   // ----------------------------------------
 
-  const room = "camera-room"
+  let room = $state("camera-room")
 
   const myId = "camera-1"
 
@@ -36,10 +36,30 @@
   const peers = new Map()
   const pendingCandidates = new Map()
 
+  /** @param {MediaStream} cameraStream */
+  async function setLowestZoom(cameraStream) {
+    const videoTrack = cameraStream.getVideoTracks()[0]
+    if (!videoTrack) return
+
+    const capabilities =
+      /** @type {{ zoom?: { min: number } }} */
+      (/** @type {unknown} */ (videoTrack.getCapabilities()))
+    if (!capabilities.zoom) return
+
+    await videoTrack.applyConstraints(
+      /** @type {MediaTrackConstraints} */
+      (
+        /** @type {unknown} */ ({
+          advanced: [{ zoom: capabilities.zoom.min }],
+        })
+      ),
+    )
+  }
+
   /** @param {string} mode */
   async function getCameraStream(mode) {
     try {
-      return await navigator.mediaDevices.getUserMedia({
+      const cameraStream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: { ideal: mode },
           width: { ideal: 1280 },
@@ -48,10 +68,12 @@
         },
         audio: true,
       })
+      await setLowestZoom(cameraStream)
+      return cameraStream
     } catch (error) {
       if (mode !== "user" && mode !== "environment") throw error
 
-      return navigator.mediaDevices.getUserMedia({
+      const cameraStream = await navigator.mediaDevices.getUserMedia({
         video: {
           width: { ideal: 1280 },
           height: { ideal: 720 },
@@ -59,6 +81,8 @@
         },
         audio: true,
       })
+      await setLowestZoom(cameraStream)
+      return cameraStream
     }
   }
 
@@ -72,9 +96,9 @@
 
       for (const pc of peers.values()) {
         for (const sender of pc.getSenders()) {
-          const nextTrack = nextStream.getTracks().find(
-            (track) => track.kind === sender.track?.kind,
-          )
+          const nextTrack = nextStream
+            .getTracks()
+            .find((track) => track.kind === sender.track?.kind)
           if (nextTrack) await sender.replaceTrack(nextTrack)
         }
       }
@@ -87,6 +111,24 @@
     } catch (error) {
       console.error(error)
       status = `カメラ切替に失敗しました: ${error instanceof Error ? error.message : String(error)}`
+    }
+  }
+
+  async function connectRoom() {
+    const roomName = room.trim()
+    if (!roomName || !stream) {
+      status = !roomName ? "room名を入力してください" : "カメラを準備中です"
+      return
+    }
+
+    try {
+      status = "Broadcast接続中..."
+      await disconnectBroadcast()
+      await connectBroadcast(roomName, handleSignal)
+      status = "待機中"
+    } catch (error) {
+      console.error(error)
+      status = error instanceof Error ? error.message : String(error)
     }
   }
 
@@ -103,12 +145,7 @@
 
       videoElement.srcObject = stream
 
-      status = "Broadcast接続中..."
-
-      // Supabase Broadcast接続
-      await connectBroadcast(room, handleSignal)
-
-      status = "待機中"
+      status = "room名を入力して接続してください"
     } catch (error) {
       console.error(error)
 
@@ -312,14 +349,18 @@
 
 <div class="container">
   <h1>カメラ発信</h1>
-
   <p>
     状態：{status}
   </p>
-
   <p>
     カメラ：{myId}
   </p>
+
+  <label>
+    room
+    <input type="text" bind:value={room} placeholder="camera-room" />
+  </label>
+  <button type="button" onclick={connectRoom}>接続</button>
 
   <button type="button" onclick={switchCamera}>
     {facingMode === "environment" ? "インカメラへ切替" : "アウトカメラへ切替"}

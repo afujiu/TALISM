@@ -4,7 +4,7 @@
 	/*******************
 	 * argument
 	*/
-	let {value=false} = $props()
+	let {value=false,size='50%'} = $props()
 	/*******************
 	 * function
 	*/

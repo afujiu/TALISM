@@ -1,9 +1,12 @@
 /**
  * csvをアップロードしてjson形式で返す
+ * @param {File | undefined} [file]
+ * @param {Array<Record<string, string>>} [replaceHeader]
+ * 	ヘッダーの名前を置換[{'ほげ':'hoge'},{'ふが':'fuga}]
+ *  ヘッダーが「ほげ」の場合は「hoge」にする
  */
-/** @param {File | undefined} [file] */
-export async function uploadCsvConvertJson(file) {
-	const selectedFile = file ?? await new Promise((resolve, reject) => {
+export async function uploadCsvConvertJson(replaceHeader=[]) {
+	const selectedFile = await new Promise((resolve, reject) => {
 		if (typeof document === 'undefined') {
 			reject(new Error('ブラウザ上で実行してください'))
 			return
@@ -19,7 +22,14 @@ export async function uploadCsvConvertJson(file) {
 		throw new TypeError('CSVファイルを指定してください')
 	}
 
-	const text = (await selectedFile.text()).replace(/^\uFEFF/, '')
+	const bytes = new Uint8Array(await selectedFile.arrayBuffer())
+	let text
+	try {
+		text = new TextDecoder('utf-8', {fatal: true}).decode(bytes)
+	} catch {
+		text = new TextDecoder('shift_jis').decode(bytes)
+	}
+	text = text.replace(/^\uFEFF/, '')
 	const rows = []
 	let row = []
 	let field = ''
@@ -57,27 +67,58 @@ export async function uploadCsvConvertJson(file) {
 
 	const headerRow = rows.shift()
 	if (!headerRow) return []
-	const headers = headerRow.map((header) => header.trim().toLowerCase())
-	const requiredHeaders = ['seriescode', 'quantity', 'jancode', 'name']
-	const missingHeaders = requiredHeaders.filter((header) => !headers.includes(header))
-	if (missingHeaders.length > 0) {
-		throw new Error(`CSVに必要な列がありません: ${missingHeaders.join(', ')}`)
-	}
+	const headerReplacements = Object.assign({}, ...replaceHeader)
+	const headers = headerRow.map((header) => {
+		const normalizedHeader = header.trim()
+		return String(headerReplacements[normalizedHeader] ?? normalizedHeader).toLowerCase()
+	})
 
 	return rows
 		.filter((row) => row.some((value) => value !== ''))
 		.map((row) => {
 			const record = Object.fromEntries(headers.map((header, index) => [header, row[index] ?? '']))
 			const quantity = Number(record.quantity)
-			if (record.quantity === '' || !Number.isFinite(quantity)) {
-				throw new Error(`quantityが数値ではありません: ${record.quantity}`)
-			}
-
-			return {
-				seriescode: record.seriescode,
-				jancode: record.jancode,
-				name: record.name,
-				quantity,
-			}
+			return record
 		})
+}
+
+/**
+ * jsonファイルをアップロード
+ * @param {Array<Record<string, string>>} [replaceHeader]
+ * 	ヘッダーの名前を置換[{'ほげ':'hoge'},{'ふが':'fuga}]
+ *  ヘッダーが「ほげ」の場合は「hoge」にする
+ */
+export async function uploadJson(replaceHeader=[]){
+	const selectedFile = await new Promise((resolve, reject) => {
+		if (typeof document === 'undefined') {
+			reject(new Error('ブラウザ上で実行してください'))
+			return
+		}
+
+		const input = document.createElement('input')
+		input.type = 'file'
+		input.accept = '.json,application/json'
+		input.onchange = () => resolve(input.files?.[0])
+		input.click()
+	})
+	if (!(selectedFile instanceof File)) {
+		throw new TypeError('JSONファイルを指定してください')
+	}
+
+	const text = await selectedFile.text()
+	const parsed = JSON.parse(text.replace(/^\uFEFF/, ''))
+	const records = Array.isArray(parsed) ? parsed : [parsed]
+	const headerReplacements = Object.assign({}, ...replaceHeader)
+
+	return records.map((record) => {
+		if (record === null || typeof record !== 'object' || Array.isArray(record)) {
+			throw new TypeError('JSONの各要素はオブジェクトである必要があります')
+		}
+		return Object.fromEntries(
+			Object.entries(record).map(([key, value]) => [
+				headerReplacements[key] ?? key,
+				value,
+			])
+		)
+	})
 }

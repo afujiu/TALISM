@@ -87,18 +87,139 @@ export class AccountClass{
 	/**
 	 * DBからデータ取得
 	 * @param {*} from 
-	 * @param {*} where 
+	 * @param {{select?:string,where?:string|null,orderBy?:string|{column:string,ascending?:boolean}|null,fromIndex?:number|null,count?:number|null,countOnly?:boolean}} options
 	 * return {ok:true or false,data:data,message:message}
+	 * 
+	 * 使用例:
+	 * await account.getDb('products', {where: "quantity > 0 and category = '模型'"})
+	 * await account.getDb('products', {where: "category in ('模型', '工具')"})
+	 * await account.getDb('products', {where: "name like '%ミニ%'"})
+	 * await account.getDb('products', {
+	 *   select: 'id,name,quantity',
+	 *   where: "quantity > 0 or category = '工具'",
+	 *   orderBy: {column: 'name', ascending: true},
+	 *   fromIndex: 0,
+	 *   count: 20
+	 * })
 	 */
-	async getDb(from,select='*'){
-		const { data, error } = await supabase.from(from).select(select)
+	async getDb(from,{select='*',where=null,orderBy=null,fromIndex=null,count=null,countOnly=false}={}){
+		/** @type {any} */
+		let query = countOnly
+			? supabase.from(from).select(select, {count:'exact',head:true})
+			: supabase.from(from).select(select)
+
+		if (where) {
+			where = where.replace(/\\/g, '\\\\')
+			const tokens = []
+			let start = 0
+			let quote = false
+			for (let index = 0; index < where.length; index += 1) {
+				if (where[index] === "'") quote = !quote
+				if (!quote && /\s/.test(where[index])) {
+					const logical = where.slice(index).match(/^\s+(and|or)\s+/i)
+					if (logical) {
+						tokens.push({type:'condition',value:where.slice(start, index).trim()})
+						tokens.push({type:'logical',value:logical[1].toLowerCase()})
+						index += logical[0].length - 1
+						start = index + 1
+					}
+				}
+			}
+			tokens.push({type:'condition',value:where.slice(start).trim()})
+
+			/** @param {string} expression */
+			const parseCondition = (expression) => {
+				const match = expression.match(/^([a-zA-Z_][\w]*)\s*(=|>|<|\bin\b|\blike\b)\s*(.+)$/i)
+				if (!match) throw new Error(`whereの条件が不正です: ${expression}`)
+				const [, column, operator, rawValue] = match
+				/** @param {string} item */
+				const parseValue = (item) => {
+					const value = item.trim()
+					if (/^null$/i.test(value)) return null
+					if (/^'.*'$/.test(value)) return value.slice(1, -1).replace(/''/g, "'")
+					if (/^-?\d+(\.\d+)?$/.test(value)) return Number(value)
+					throw new Error(`whereの値が不正です: ${value}`)
+				}
+				if (operator.toLowerCase() === 'in') {
+					if (!/^\(.*\)$/.test(rawValue.trim())) throw new Error(`inの値が不正です: ${rawValue}`)
+					return {column,operator:'in',values:rawValue.trim().slice(1,-1).split(',').map(parseValue)}
+				}
+				if (operator.toLowerCase() === 'like') {
+					return {column,operator:'like',value:parseValue(rawValue)}
+				}
+				return {column,operator,value:parseValue(rawValue)}
+			}
+
+			const conditions = tokens.filter((token) => token.type === 'condition').map((token) => parseCondition(token.value))
+			const logicals = tokens.filter((token) => token.type === 'logical').map((token) => token.value)
+			/** @param {any} condition */
+			const toPostgrest = (condition) => {
+				/** @param {any} value */
+				const format = (value) => typeof value === 'string' ? `"${value.replace(/"/g, '\\"')}"` : String(value)
+				if (condition.operator === 'in') return `${condition.column}.in.(${condition.values.map(format).join(',')})`
+				if (condition.operator === 'like') return `${condition.column}.like.${format(condition.value)}`
+				return `${condition.column}.${condition.operator === '=' ? 'eq' : condition.operator === '>' ? 'gt' : 'lt'}.${format(condition.value)}`
+			}
+			/** @param {any} condition */
+			const applyCondition = (condition) => {
+				if (condition.operator === '=') query = query.eq(condition.column, condition.value)
+				if (condition.operator === '>') query = query.gt(condition.column, condition.value)
+				if (condition.operator === '<') query = query.lt(condition.column, condition.value)
+				if (condition.operator === 'in') query = query.in(condition.column, condition.values)
+				if (condition.operator === 'like') query = query.like(condition.column, condition.value)
+			}
+
+			let group = [conditions[0]]
+			for (let index = 0; index < logicals.length; index += 1) {
+				if (logicals[index] === 'and') {
+					if (group.length === 1) applyCondition(group[0])
+					else query = query.or(group.map(toPostgrest).join(','))
+					group = [conditions[index + 1]]
+				} else {
+					group.push(conditions[index + 1])
+				}
+			}
+			if (group.length > 0) {
+				if (group.length === 1) applyCondition(group[0])
+				else query = query.or(group.map(toPostgrest).join(','))
+			}
+		}
+
+		if (orderBy) {
+			if (typeof orderBy === 'string') {
+				query = query.order(orderBy, { ascending: true })
+			} else if (typeof orderBy === 'object' && orderBy.column) {
+				query = query.order(orderBy.column, {
+					ascending: orderBy.ascending !== false
+				})
+			}
+		}
+
+		if (!countOnly && fromIndex !== null && count !== null) {
+			const start = Math.max(0, Math.floor(Number(fromIndex)))
+			const length = Math.max(0, Math.floor(Number(count)))
+			if (Number.isFinite(start) && Number.isFinite(length)) {
+				query = query.range(start, start + length - 1)
+			}
+		}
+		const { data, count: totalCount, error } = await query
 		if (error) {
 				console.error(error.message)
 				return {ok:false,data:null,message:error.message}
 		}
-		return {ok:true,data:data,message:''}
+		return {ok:true,data:countOnly ? totalCount : data,message:''}
 	}
 
+	/**
+	 * 検索したデータの件数を取得
+	 * @param {*} from
+	 * @param {{select?:string,where?:string|null}} options
+	 * @returns {Promise<{ok:boolean,data:number|null,message:string}>}
+	 */
+	async getDbCount(from,{select='*',where=null}={}){
+		return await this.getDb(from, {select, where, countOnly:true})
+	}
+	
 	/**
 	 * DBにデータ登録
 	 * @param {*} from 
@@ -115,6 +236,8 @@ export class AccountClass{
 				return {ok:true,data:data,message:'登録成功'}
 		}
 	}
+
+
 
 
 		/**

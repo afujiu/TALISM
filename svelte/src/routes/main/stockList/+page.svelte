@@ -4,55 +4,244 @@
   import { account, ui } from "$lib/store"
   import { piSound } from "$lib/Sound.js"
   import { nowDateYMD } from "$lib/Date.js"
-  import { uploadCsvConvertJson } from "$lib/Upload.js"
+  import { uploadCsvConvertJson,uploadJson } from "$lib/Upload.js"
   import Loading from "$comp/Loading.svelte"
   import Icon from "$comp/Icon.svelte"
   import Fab from "$comp/Fab.svelte"
   import Format from "$comp/Format.svelte"
   import Input from "$comp/Input.svelte"
   import Popup from "$comp/Popup.svelte"
+	import ContentsMenu from "$comp/ContentsMenu.svelte"
+  import { MakeshopClass } from "$lib/MakeshopClass"
 
   /*******************
    * argument
    */
   let isLoading = $state(true)
-  let isSaving = $state(false)
-  let selectedCategory = $state("")
+	let isStocklistOption = $state(false)
+	let selectedNameEditor=$state(false)
 
-  const categoryList = $state([
-    "カーモデル",
-    "オートバイ",
-    "ミリタリーミニチュア",
-    "飛行機",
-    "艦船",
-    "恐竜",
-    "工作",
-    "ミニ四駆",
-    "ミニ四駆パーツ",
-    "ラジコン",
-    "メイクアップ材",
-    "塗料",
-    "クラフトツール",
-    "ガンプラ",
-    "キャラクターモデル",
-    "30MM",
-    "その他",
-  ])
+	const MAX_ONE_PAGE_ROW=100
+
+	let listData = $state(
+		{
+			page:0,
+			isOpen:false,
+			where:{maker:'',category:''},
+			totalCount:0,
+			list:[]}
+	)
+
+	/** @type {{isOpen:boolean, list:Array<Record<string, any>>, makeshopList:Array<Record<string, any>>, differenceList:Array<Record<string, any>>, uploadFunc:()=>Promise<void>, uploadSave:()=>Promise<void>}} */
+	let uploadData = $state({
+		isOpen:false,
+		list:[],
+		makeshopList:[],
+		differenceList:[],
+		/**
+		 * JSONファイルをアップロード
+		*/
+		uploadJson:async()=>{
+			try{
+				const resultJson = await uploadJson()
+				const result = await $account.getDb('products')
+				if(result.ok){
+					const saveList=[]
+					// 既存janコードがない分をupsert
+					for(const val of resultJson){
+						if(result.data.find(v=>v.jancode == val.jancode)==undefined){
+							saveList.push({
+								jancode:val.jancode,
+								name:val.name,
+								category:'',
+								maker:val.brand,
+								price:(val.price!='')?Number(val.price):null,
+								taxprice:(val.taxprice!='')?Number(val.taxprice):null,
+							})
+						}
+					}
+					console.log(saveList)
+					await $account.upsertDb('products',saveList,'jancode')
+					listData.page=1
+					await getDataList()
+				}
+			}catch(e){}
+		},
+		/**
+		 * アップロード
+		 */
+		uploadFunc:async()=>{
+			uploadData.list=[]
+			uploadData.makeshopList=[]
+			uploadData.differenceList=[]
+   		const uploadList = await uploadCsvConvertJson([
+				{'システム商品コード':'makeshopcode'},
+				{'JANコード':'jancode'},
+				{'商品名':'name'},
+				{'カテゴリーパス':'category'},
+				{'数量':'quantity'},
+				{'製造元':'maker'},
+			])
+    	if (uploadList.length > 0) {
+				uploadData.makeshopList = [...uploadList]
+				
+				const result = await $account.getDb('products')
+				// DBデータを取得
+				if(result.ok){
+					uploadData.list = result.data
+					// 実数データとmakeshopデータを比較
+					for(const val of uploadData.list){
+						const exist = uploadData.makeshopList.find(v=>v.jancode==val.jancode)
+						if(exist){
+							if(Number(exist.quantity)!=Number(val.quantity)){
+								uploadData.differenceList.push({
+									makeshopcode:exist.makeshopcode,
+									jancode:val.jancode,
+									seriescode:val.seriescode,
+									name:val.name,
+									quantity:val.quantity,
+									makeshopQuantity:exist.quantity
+								})
+							}
+						}
+					}
+				}
+				uploadData.isOpen = true
+				isStocklistOption=false
+    	}
+		},
+		/**
+		 * makeshopデータのアップロードを実行
+		 * jancode,name,category,maker,meta:[makeshopCode:makeshopcode,makeshopQuantity:quantity]
+		 * 既存のjancodeは更新しない
+		 */
+		uploadSave:async()=>{
+			let saveList=[]
+			for(let val of uploadData.makeshopList){
+				saveList.push({
+					jancode:val.jancode,
+					meta:{makeshopCode:val.makeshopcode,makeshopQuantity:val.quantity},
+				})
+			}
+			await $account.upsertDb('products',saveList,'jancode')
+			listData.page=1
+			await getDataList()
+			uploadData.isOpen = false
+		}
+	})
+
+  const categoryList = MakeshopClass.categoryList
 
   const makerList = $state([
-    "バンダイ",
-    "タミヤ",
-    "ハセガワ",
-    "アオシマ",
-    "ミスターホビー",
-    "ガイアノーツ",
-    "フジミ模型",
-    "コトブキヤ",
-    "ファインモールド",
-    "アーテック",
-    "東京マルイ",
-    "LAYLAX",
-  ])
+	"タミヤ",
+	"LayLax",
+	"ナインボール",
+	"バンダイ",
+	"東京マルイ",
+	"F.FACTORY",
+	"ハセガワ",
+	"フジミ",
+	"ファイアフライ",
+	"フリーダム・アート",
+	"KM企画",
+	"ライラクス",
+	"アオシマ",
+	"イマイ",
+	"不明",
+	"SⅡS",
+	"アリイ",
+	"アローダイナミック",
+	"アングス",
+	"システマ",
+	"キットボーイ",
+	"エレメント",
+	"ドラゴン",
+	"ABCホビー",
+	"アーテック",
+	"accutact",
+	"AFVクラブ",
+	"AIM SPORTS",
+	"Alan",
+	"ANGEL",
+	"BANDAI SPIRITS",
+	"Bushnell",
+	"C-MORE",
+	"CAW",
+	"ENCORE MODELS",
+	"EOTech",
+	"G&G",
+	"G&P",
+	"GFORCE",
+	"GSIクレオス",
+	"HMC",
+	"HYUGA",
+	"KASSNAR",
+	"KSC",
+	"LA-GUNSHOP",
+	"LEAPERS",
+	"LONEX",
+	"NcSTAR",
+	"NEOX",
+	"NINEBALL",
+	"NITRO.Vo",
+	"NOVEL",
+	"OKパーツ",
+	"OPTION NO1",
+	"ORGA",
+	"PDI",
+	"SHS",
+	"Skirmish",
+	"TASCO",
+	"TOP",
+	"UFC",
+	"WA",
+	"XCORTECH",
+	"アカデミー",
+	"イーグル",
+	"イーグルフォース",
+	"イーグルモデル",
+	"イタレリ",
+	"ウェーブ",
+	"クライタック",
+	"クラウン",
+	"クラウンモデル",
+	"グンゼ",
+	"コスモ・エナジー",
+	"サイトロンジャパン",
+	"ジーフォース",
+	"スウィート",
+	"スプレッドワールド",
+	"スモーキーズ",
+	"セキトー",
+	"ダイアモンドリング",
+	"タスクフォース",
+	"タミックス",
+	"ディアブロ",
+	"トミー",
+	"ノーベルアームズ",
+	"ハートフォード",
+	"ハイテック",
+	"パカ山クラフト",
+	"パドック",
+	"バトラークリーク",
+	"ビッグアウト",
+	"ピットロード",
+	"ヒューガ",
+	"ファースト",
+	"ファーストファクトリー",
+	"ファインモールド",
+	"プロゲーマー",
+	"プロテック",
+	"ホビーマスター",
+	"マルイ",
+	"マルサン",
+	"マルシン",
+	"モケイパドック",
+	"桑田商会",
+	"玄人の道",
+	"童友社",
+	"日本模型"
+])
 
   let header = $state([
     { key: "brand", name: "ブランド" },
@@ -69,157 +258,147 @@
     { key: "seo", name: "SEO" },
     { key: "seriescode", name: "シリーズコード" },
   ])
-  let list = $state([])
-
-  const uploadData = $state({
-    isUpload: false,
-    bulkMaker: "",
-    bulkCategory: "",
-    list: [],
-  })
 
   /*******************
    * funcrion
    */
 
   onMount(async () => {
-    const result = await $account.getDb("products")
-    if (result.ok) {
-      list = result.data
-      for (let idx in list) {
-        list[idx]["editQuantity"] = null
-      }
-    }
+		isLoading = true
+		listData.page=0
+		await getDataList()
     isLoading = false
   })
-
-  /**
-   * CSVファイルアップロード
-   */
-  async function upload() {
-		uploadData.list=[]
-    const uploadList = await uploadCsvConvertJson()
-    if (uploadList.length > 0) {
-      uploadData.list = [...uploadList]
-      uploadData.isUpload = true
-    }
-  }
-
-  /**
-   * 一覧のjancodeから商品情報をセット
-   */
-  async function saveUpdateData() {
-		// 一定間隔でjanコードapiリクエストを投げる
-    /**
-     * @param {Array<Record<string, any>>} list
-     * @param {number} idx
-     * @returns {Promise<void>}
-     */
-    const jancodeFunc = async (list,idx) => {
-      return new Promise((resolve) => {
-        if (list.length <= idx) {
-          resolve()
-            return
-        }
-        setTimeout(async () => {
-          try {
-            if (list[idx].jancode) {
-              let jancodeData = await $account.getJancode(
-                "cf_api_jancode",
-                list[idx].jancode,
-              )
-              if (jancodeData != null) {
-                jancodeData = jancodeData[0]
-                console.log(jancodeData)
-                if (jancodeData?.name && jancodeData?.brand?.name && jancodeData?.price) {
-                  list[idx].name = list[idx].name ? list[idx].name : jancodeData.name
-                  list[idx].brand = list[idx].brand ? list[idx].brand : jancodeData.brand.name
-                  list[idx].price = list[idx].price ? list[idx].price : jancodeData.price
-                }
-              }
-            }
-          } catch (e) {
-            console.log(e)
-          }
-          await jancodeFunc(list, idx + 1)
-          resolve()
-        }, 2000)
-      })
-    }
-		//商品名取得
-		await jancodeFunc(uploadData.list,0)
-		console.log(uploadData)
-		for(let idx in uploadData.list){
-			uploadData.list[idx].maker = uploadData.bulkMaker
-			uploadData.list[idx].category = uploadData.bulkCategory
+	/**
+	 * データ取得
+	 */
+	async function getDataList(){
+		listData.isOpen=false
+		let where = ''
+		if(listData.where['maker']!=''){
+			where+=`maker like '%${listData.where['maker']}%'`
 		}
-		console.log('upsertDb')
-		await $account.upsertDb('products',uploadData.list,'jancode')
-		uploadData.isUpload=false
-  }
+		if(listData.where['category']!=''){
+			if(where!='')where +=' and '
+			where+= `category like '%${listData.where['category']}%'`
+		}
+		console.log(listData.where)
+    const result = await $account.getDb("products",{where:where,orderBy:'name,seriescode',fromIndex:(listData.page)*MAX_ONE_PAGE_ROW,count:MAX_ONE_PAGE_ROW})
+    if (result.ok) {
+			console.log(where)
+			const countResult = await $account.getDbCount("products",{where:where})
+			console.log(countResult)
+			if(countResult.ok){
+				listData.totalCount = countResult.data
+			}
+      listData.list = result.data
+      for (let idx in listData.list) {
+        listData.list[idx]["editQuantity"] = null
+      }
+    }
+		listData.isOpen=true
+	}
+
+	/**
+	 * 一括更新
+	*/
+	async function saveBulk(){
+		let updateData=[]
+		for(const val of listData.list){
+			updateData.push({
+				brand:val.brand,
+				category:val.category,
+				jancode:val.jancode,
+				maker:val.maker,
+				meta:val.meta,
+				name:val.name,
+				price:val.price,
+				quantity:val.quantity,
+				seo:val.seo,
+				seriescode:val.seriescode})
+			if(val.id){
+				updateData[updateData.length-1].id = val.id
+			}
+		}
+		/*
+		for(const key in updateData){
+			delete updateData[key].editQuantity
+			// nameから「1/35」「プラモデル」「プラモデル」「同梱不可」「 」 seriescodeを空白に置換
+      const seriescode = String(updateData[key].seriescode ?? '').trim()
+      const removeWords = ['1/35','1/ 35 ', 'プラモデル',' ※キャンセル不可',' ※キャンセル不可','ミリタリーミニチュア', '同梱不可','MM','タミヤ','TAMIYA','()','（）','返品種別B', seriescode]
+      const removePattern = removeWords
+        .filter((word) => word !== '')
+        .map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+        .join('|')
+      updateData[key].name = String(updateData[key].name ?? '')
+        .replace(new RegExp(removePattern, 'g'), '')
+        .replace(/\s+/g, ' ')
+        .trim()
+		}
+		/**/
+		await $account.upsertDb('products',updateData,'jancode')
+		await getDataList()
+	}
 </script>
 
 <Loading {isLoading}>
   <div class="container">
-    <div class="flex sticky non-scroll-bar">
-      <div class="f1 flex tab">
-        <button
-          class="f1 def-btn {selectedCategory == '' ? 'selected' : ''}"
-          onclick={() => {
-            selectedCategory = ""
-          }}>全て</button
-        >
-        {#each categoryList as category}
-          <button
-            class="f1 def-btn {selectedCategory == category ? 'selected' : ''}"
-            onclick={() => {
-              selectedCategory = category
-            }}>{category}</button
-          >
-        {/each}
-      </div>
-      <div class="f1"></div>
-    </div>
-    <div style="width:100%;height:100%;overflow:auto;">
+		<div class="tab-space flex">
+			<Input type="datalist" exclass="f1" list={makerList} placeholder="製造元" bind:value={listData.where['maker']}
+				on:change={async()=>{listData.page=0;await getDataList()}}
+			/>
+			<Input type="datalist" exclass="f1" list={categoryList} placeholder="カテゴリー" bind:value={listData.where['category']}
+			on:change={async()=>{listData.page=0;await getDataList()}}
+			/>
+		</div>
+		<!--テーブル-->
+		<Loading isLoading={!listData.isOpen}>
       <table>
         <thead>
           <tr>
-            <th>No</th>
-            <th>メーカー</th>
-            <th>カテゴリー</th>
-            <th>シリーズコード</th>
-            <th style="width:30em;">品名</th>
-            <th>単価</th>
-            <th>数量</th>
+						{#if listData.where.maker==''}
+            <th style="width:7em;">メーカー</th>
+						{/if}
+						{#if listData.where.category==''}
+            <th style="width:18em;">カテゴリー</th>
+						{/if}
+            <th class="stock-code">コード</th>
+            <th class="stock-name" onclick={(()=>{selectedNameEditor=!selectedNameEditor})}>品名</th>
+            <th style="width:2em;">数量</th>
+            <th style="width:2em;">単価</th>
             <th>JANコード</th>
-            <th>更新日</th>
-            <th>更新</th>
           </tr>
         </thead>
         <tbody>
-          {#each list as data, idx}
+          {#each listData.list as data, idx}
             <tr>
-              <td class="first-td">{idx + 1}</td>
-              <td
-                ><Input type="datalist" list={makerList} bind:value={data.maker}
-                ></Input></td
-              >
+							{#if listData.where.maker==''}
+								<td>
+									<Input type="datalist"
+									list={makerList}
+									bind:value={data.maker}></Input></td>
+							{/if}
+							{#if listData.where.category==''}
               <td
                 ><Input
-                  type="select"
+                  type="datalist"
                   list={categoryList}
                   bind:value={data.category}
-                ></Input></td
-              >
-              <td><Input type="text" bind:value={data.seriescode} /></td>
-              <td style="width:30em;"><Input bind:value={data.name}></Input></td
-              >
-              <td><Input type="number" bind:value={data.price}></Input></td>
+                ></Input></td>
+							{/if}
+              <td class="align-center"><Input exclass="align-center" type="text" bind:value={data.seriescode} /></td>
+              <td class="break-word">
+								{#if selectedNameEditor}
+									<Input type="text" bind:value={data.name}/>
+								{:else}
+								<div>{data.name}</div>
+							{/if}
+							</td>
               <td class="flex">
                 <div class="f1">
                   <Format type="number" value={data.quantity}></Format>
                 </div>
-                <div class="f3">
+                <div class="f2">
                   <Input
                     type="number"
                     min="0"
@@ -228,105 +407,213 @@
                   ></Input>
                 </div>
               </td>
+              <td><Input type="number" bind:value={data.price}/></td>
               <td><Input type="text" bind:value={data.jancode}></Input></td>
-              <td><Format type="from-time" value={data.update_at}></Format></td>
-              <td><button class="btn confirm-btn">Save</button></td>
             </tr>
           {/each}
         </tbody>
       </table>
-    </div>
+		</Loading>
+		<!--テーブル-->
+
+<!--FAB------------------------------------------------------------------->
     <Fab>
       <span class="f1">
         <button
-          class="btn"
-          onclick={async () => {
-            upload()
-          }}><Icon value="upload"></Icon>アップロード</button
-        >
+          class="btn reset-btn" onclick={() => {isStocklistOption =!isStocklistOption}}><Icon value="more_horiz"></Icon>
+				</button>
+			<!--オプションコンテンツメニュー-->
+			<ContentsMenu id="stocklistOption" value={isStocklistOption}
+				on:close={()=>{isStocklistOption=false}}
+			>
+			<div style="width:100%;">
+				<button class="btn" style="height:4em;"
+					onclick={async ()=>{
+						await uploadData.uploadFunc()
+					}}
+				><Icon value="upload"/>アップロード</button>
+				<button class="btn" style="height:4em;"
+					onclick={async ()=>{
+						await uploadData.uploadJson()
+					}}
+				><Icon value="upload"/>jsonアップロード</button>
+
+				<button class="btn" style="height:4em;"><Icon value="download"/>ダウンロード</button>
+
+				uploadJson
+			</div>
+			</ContentsMenu>
+			<!-- 戻る-->
       </span>
       <span class="f1">
-        <button class="btn"><Icon value="download"></Icon>ダウンロード</button>
+        <button class="btn"
+					disabled={0>=listData.page}
+					onclick={async()=>{
+						console.log('test')
+						if(0<listData.page){
+							listData.page--
+							await getDataList()
+						}
+					}}
+				><Icon value="arrow_back_ios"></Icon></button>
       </span>
+			<!-- 進む-->
       <span class="f1">
-        <button class="btn"><Icon value="barcode"></Icon>スキャン</button>
+        <button class="btn" 
+					disabled={listData.totalCount<(MAX_ONE_PAGE_ROW*(listData.page+1))}
+					onclick={async()=>{
+						listData.page++
+						await getDataList()
+					}}
+				><Icon value="arrow_forward_ios"></Icon></button>
       </span>
+			<!--ページ数　件数-->
+			<span class="f2 align-center" style="background:var(--main1);">
+				<div>{listData.page+1}/{Math.ceil(listData.totalCount/MAX_ONE_PAGE_ROW)}</div>
+				<div><Format type="number" value={listData.totalCount}></Format>件</div>
+			</span>
       <span class="f1">
-        <button class="btn confirm-btn">一括更新</button>
+        <button class="btn confirm-btn" onclick={async()=>{await saveBulk()}}>Save</button>
       </span>
     </Fab>
+<!--FAB------------------------------------------------------------------->
   </div>
-  <!--CSVアップロードポップアップ------------------------------------------------------->
+
+<!--CSVアップロードポップアップ------------------------------------------------------->
   <Popup
-    bind:value={uploadData.isUpload}
+    bind:value={uploadData.isOpen}
     on:close={() => {
-      uploadData.isUpload = false
+      uploadData.isOpen = false
     }}
+		size
   >
-    <span slot="title"> CSVアップロード </span>
-    <div class="flex">
-      <span class="f1 align-right">{uploadData.list.length}件</span>
-    </div>
-    <div class="flex">
-      <span class="f1">一括カテゴリー</span>
-      <span class="f2"
-        ><Input
-          type="select"
-          bind:value={uploadData.bulkCategory}
-          list={categoryList}
-        ></Input></span
-      >
-    </div>
-    <div class="flex">
-      <span class="f1">一括メーカー</span>
-      <span class="f2"
-        ><Input type="select" bind:value={uploadData.bulkMaker} list={makerList}
-        ></Input></span
-      >
-    </div>
-    <div class="flex">
-      <span class="f1">
-        <button class="btn" onclick={async()=>{await saveUpdateData()}}>保存</button>
-      </span>
-    </div>
+	<span slot="title">アップロード</span>
+	<div>
+		<div>実数とアップロードファイルの比較</div>
+		<div>差分：{uploadData.differenceList.length}件</div>
+		<div class="upload-table">
+			<table style="width:100%;">
+				<thead>
+					<tr>
+						<th style="width:5em;">JANコード</th>
+						<th style="width:3em;">コード</th>
+						<th style="width:10em;">名前</th>
+						<th style="width:2em;">実数</th>
+						<th style="width:2em;">通販数</th>
+					</tr>
+				</thead>
+				<tbody>
+				{#each  uploadData.differenceList as val}
+					<tr>
+						<td class="align-center">
+							<a href="https://console.makeshop.jp/products/{Number(val.makeshopcode)}?shopId=kitboy" target="_blank">{val.jancode}</a></td>
+						<td class="align-center">{val.seriescode}</td>
+						<td class="break-word">{val.name}</td>
+						<td>{val.quantity}</td>
+						<td>{val.makeshopQuantity}</td>
+					</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+		<div>
+			アップロードデータから登録
+		</div>
+		<div>
+			<button class="btn confirm-btn" onclick={async()=>{ await uploadData.uploadSave()}}>アップロード</button>
+			<table style="width:100%;">
+				<thead>
+					<tr>
+						<th>JANコード</th>
+						<th>コード</th>
+						<th>製造元</th>
+						<th>カテゴリー</th>
+						<th>名前</th>
+						<th>実数</th>
+					</tr>
+				</thead>
+				<tbody>
+				{#each  uploadData.makeshopList as val}
+					<tr>
+						<td class="align-center">
+							{val.jancode}</td>
+						<td class="align-center">{val.makeshopcode}</td>
+						<td>{val.maker}</td>
+						<td>{val.category}</td>
+						<td class="break-word">{val.name}</td>
+						<td>{val.quantity}</td>
+						<td>{val.makeshopQuantity}</td>
+					</tr>
+					{/each}
+				</tbody>
+			</table>
+
+			
+		</div>
+	</div>
   </Popup>
-  <!--CSVアップロードポップアップ------------------------------------------------------->
+<!--CSVアップロードポップアップ------------------------------------------------------->
 </Loading>
 
 <style>
   .container {
     position: relative;
+		width:100%;
+		height:100%;
+		overflow:auto;
   }
-  .sticky {
-    position: sticky;
-    position: -webkit-sticky;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 3em;
-    overflow-x: auto;
-    z-index: 900;
-  }
-  .tab button {
-    opacity: 0.5;
-    outline: none;
-    font-weight: lighter;
-  }
-  .tab button:hover,
-  .tab button:focus {
-    opacity: 1;
-  }
-  .tab button.selected {
-    opacity: 1;
-    font-weight: bold;
-    color: var(--confirm);
-  }
-
+	.tab-space{
+		position:sticky;
+		position:-webkit-sticky;
+    inset:0 auto auto 0;
+		z-index:900;
+    width:100%;
+		height:3em;
+    min-width:100%;
+    box-sizing:border-box;
+		overflow-x:auto;
+    overflow-y:hidden;
+		background:white;
+	}
+	th {
+		box-sizing: border-box;
+	}
   td {
     height: 2em;
     min-width: 5em;
+		box-sizing: border-box;
   }
-  .first-td {
-    width: 1em;
-  }
+
+	/**アップロードポップアップ**/
+	.upload-table{
+		width:100%;
+		height:10em;
+		overflow:auto;
+	}
+
+
+	/*幅*/
+	.stock-code{
+		width:2em;
+	}
+
+	.stock-name{
+		width:40em;
+	}
+	@media (max-width: 1024px) {
+		.stock-code{
+			width:0.8em;
+		}
+		.stock-name{
+			width:25em;
+		}
+	}
+	@media (max-width: 420px) {
+		.stock-code{
+			width:0.8em;
+		}
+		.stock-name{
+			width:20em;
+		}
+	}
 </style>

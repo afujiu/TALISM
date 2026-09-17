@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from "svelte"
 	//isActive(true:公開,false:ローディング)
-	let { isLoading = $bindable(false)} = $props()
+	let { isLoading = $bindable(false),title = $bindable('Loading')} = $props()
 	onMount(async() => {
 	})
 </script>
@@ -9,7 +9,7 @@
 	{#if isLoading}
 		<span class="loading">
 			<span class="loading-spinner"></span>
-			<span class="loading-text">Loading</span>
+			<span class="loading-text">{title}</span>
 		</span>
 	{:else}
 		<slot/>
@@ -37,7 +37,7 @@
 		width:2.5em;
 		height:2.5em;
 		border:0.25em solid rgba(75,85,99,0.2);
-		border-top-color:#2f8f5f;
+		border-top-color:black;
 		border-radius:50%;
 		animation:spin 0.8s linear infinite;
 	}

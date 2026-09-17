@@ -2,6 +2,11 @@
 インプット要素
 --------------------------------->
 <script>
+	import { createEventDispatcher } from 'svelte'
+	import { onMount } from 'svelte'
+
+	const dispatch = createEventDispatcher()
+
 	/**
 	 * type:
 	 * 	text,
@@ -14,10 +19,14 @@
 	 * 	textarea,
 	 * readonly: true or false
 	 */
-	let { value = $bindable(null), type = 'text',list=[],placeholder='',exclass='',datalistId='input-datalist',
+	let { value = $bindable(null), type = 'text',list=[], placeholder='',exclass='',datalistId='input-datalist',
 		min=null,max=null,step=null,
 		readonly=false
 	} = $props()
+
+	onMount(() => {
+		datalistId = `input-datalist-${Math.random().toString(36).slice(2)}`
+	})
 
 	/** @param {unknown} option */
 	function optionValue(option) {
@@ -32,11 +41,12 @@
 	/** @param {unknown} option */
 	function optionLabel(option) {
 		if (typeof option !== 'object' || option === null) {
-			return option
+			return option == null ? '' : String(option)
 		}
 		/** @type {{ label?: string, name?: string, value?: string | number }} */
 		const item = option
-		return item.label ?? item.name ?? item.value
+		const label = item.label ?? item.name ?? item.value
+		return label == null ? '' : String(label)
 	}
 
 	/** @param {number} delta */
@@ -49,22 +59,30 @@
 		if (max !== null && next > Number(max)) next = Number(max)
 		value = next
 	}
+
+	/** @param {Event} event */
+	function handleChange(event) {
+		dispatch('change', {
+			value,
+			event,
+		})
+	}
 </script>
 {#if type=='number'}
 	<div class="number-input">
 		<button type="button" class="number-button" onclick={() => changeNumber(-1)} disabled={readonly}>-</button>
-		<input type="number" bind:value={value} min={min} max={max} step={step} placeholder={placeholder} class={exclass} {readonly}/>
+		<input type="number" bind:value={value} onchange={handleChange} min={min} max={max} step={step} placeholder={placeholder} class={exclass} {readonly}/>
 		<button type="button" class="number-button" onclick={() => changeNumber(1)} disabled={readonly}>+</button>
 	</div>
 {:else if type=='datalist'}
-	<input type="text" bind:value={value} list={datalistId} placeholder={placeholder} class={exclass} {readonly}/>
+	<input type="text" bind:value={value} onchange={handleChange} list={datalistId} placeholder={placeholder} class={exclass} {readonly}/>
 	<datalist id={datalistId}>
 		{#each list as option}
 			<option value={optionValue(option)} label={optionLabel(option)}></option>
 		{/each}
 	</datalist>
 {:else if type=='select'}
-	<select bind:value={value} class={exclass} disabled={readonly}>
+	<select bind:value={value} onchange={handleChange} class={exclass} disabled={readonly}>
 		{#if placeholder}
 			<option value="" disabled>{placeholder}</option>
 		{/if}
@@ -73,13 +91,13 @@
 		{/each}
 	</select>
 {:else if type=='textarea'}
-	<textarea bind:value={value} placeholder={placeholder} class={exclass} {readonly}></textarea>
+	<textarea bind:value={value} onchange={handleChange} placeholder={placeholder} class={exclass} {readonly}></textarea>
 {:else if type=='date-time'}
-	<input type="datetime-local" bind:value={value} placeholder={placeholder} class={exclass} {readonly}/>
+	<input type="datetime-local" bind:value={value} onchange={handleChange} placeholder={placeholder} class={exclass} {readonly}/>
 {:else if type=='textarea'}
-	<textarea bind:value={value} placeholder={placeholder} class={exclass} {readonly}></textarea>
+	<textarea bind:value={value} onchange={handleChange} placeholder={placeholder} class={exclass} {readonly}></textarea>
 {:else}
-	<input type={type} bind:value={value} placeholder={placeholder} class={exclass} {readonly}/>
+	<input type={type} bind:value={value} onchange={handleChange} placeholder={placeholder} class={exclass} {readonly}/>
 {/if}
 <style>
 	input,textarea,select{
