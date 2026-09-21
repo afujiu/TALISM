@@ -34,15 +34,22 @@
 		color:#4b5563;
 	}
 	.loading-spinner{
-		width:2.5em;
-		height:2.5em;
+		width:20px;
+		height:20px;
+		aspect-ratio:1 / 1;
+		flex:0 0 20px;
+		box-sizing:border-box;
 		border:0.25em solid rgba(75,85,99,0.2);
 		border-top-color:black;
 		border-radius:50%;
 		animation:spin 0.8s linear infinite;
+		margin:0;
+		padding:0;
 	}
 	.loading-text{
-		font-size:0.95em;
+		margin:0;
+		padding:0;
+		font-size:0.7em;
 		letter-spacing:0.08em;
 		text-transform:uppercase;
 	}

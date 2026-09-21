@@ -170,7 +170,6 @@
 		left:calc(var(--nav-width) * (-1));
 		width:var(--nav-width);
 		height:calc(100% - var(--header-height) - var(--footer-height));
-		z-index:900;
 		overflow:hidden;
 		background:var(--base1);
 	}
@@ -273,13 +272,6 @@
 	overflow:auto;
 	background:white;
 	box-shadow: 0px 1px 3px 2px rgba(0,0,0,0.5);
-}
-
-/**アイコンボタン**/
-button.icon{
-	background:transparent;
-	border:none;
-	cursor: pointer;
 }
 
 button{

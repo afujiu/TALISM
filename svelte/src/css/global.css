@@ -49,6 +49,12 @@ section article{
 	display: none;
 }
 
+.full-width{
+	width:100%;
+}
+.full-height{
+	height:100%;
+}
 /**
 フレックス
 **/
@@ -106,10 +112,19 @@ section article{
 	height:100%;
 	border:none;
 	cursor:pointer;
-	transition: filter 0.5s ease;
+	transition: filter 0.2s ease;
+	
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+
+}
+.btn span{
+	justify-content: center;
 }
 .btn:hover,.btn:focus{
-	box-shadow:0px 0px 5px rgba(0,0,0,1);
+	box-shadow:0px 0px 2px rgba(0,0,0,1);
 	filter: brightness(1.2);
 }
 
@@ -136,10 +151,18 @@ section article{
 	-webkit-backdrop-filter: blur(2px);
 }
 
+
 .btn:disabled{
 	border:none;
 	box-shadow:0px 0px 0px rgba(0,0,0,0)!important;
 	filter: brightness(0.1);
+}
+
+/**アイコンボタン**/
+button.icon{
+	background:transparent;
+	border:none;
+	cursor: pointer;
 }
 /****************************
 * テーブル

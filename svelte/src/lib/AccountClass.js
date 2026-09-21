@@ -12,7 +12,10 @@ export class AccountClass{
 			stateLogin:'SIGNED_OUT',
 			settings:{},
 		}
+		this.cache={}
 	}
+
+// #region ************supabaseのログイン処理*************
 
 	/**
 	 * サインイン
@@ -68,6 +71,17 @@ export class AccountClass{
 		supabase.auth.signOut()
 	}
 
+	/**
+	 * 設定をデータベースから取得してセット
+	 * @param {*} settings 
+	 */
+	setSettings(srgSettings){
+		let settings ={}
+		for(let setting of srgSettings){
+			settings[setting.key] = {name:setting.name,value:setting.value}
+		}
+		this.mem.settings = settings
+	}
 
 	/**
 	 * 
@@ -77,12 +91,17 @@ export class AccountClass{
 				this.authSubscription.unsubscribe()
 		}
 	}
+
 	/**
 	 * ログイン状態を取得
 	 */
 	get stateLogin(){
 		return this.mem.stateLogin
 	}
+// #endregion
+
+
+// #region *************supabaseのpostgres処理*************
 
 	/**
 	 * DBからデータ取得
@@ -238,8 +257,6 @@ export class AccountClass{
 	}
 
 
-
-
 		/**
 	 * DBにデータ登録+修正
 	 * @param {*} from 
@@ -324,25 +341,10 @@ export class AccountClass{
 		return {ok:true,data:data,message:'削除成功'}
 	}
 
-	/**
-	 * 設定をデータベースから取得してセット
-	 * @param {*} settings 
-	 */
-	setSettings(srgSettings){
-		let settings ={}
-		for(let setting of srgSettings){
-			settings[setting.key] = {name:setting.name,value:setting.value}
-		}
-		this.mem.settings = settings
-	}
+// #endregion
 
-	/***cloudflareのAPI処理 *******
-	 * ***************************
-	*/
 
-	/**
-	 * mode:cvapi
-	 */
+// #region *************cloudflareのAPI処理*************
 
 	/**
 	 * kv取得
@@ -495,6 +497,7 @@ export class AccountClass{
 			return null
 		}
 	}
+
 	/**
 	 * メディア削除
 	 * @param {*} id 
@@ -527,15 +530,6 @@ export class AccountClass{
 
 		}
 	}
-//#endregion
-	/**
-	 * OCR
-	 * @param {*} img 
-	 * @returns 
-	 */
-	async scanOcr(img){
-		return await this.ocr.predict(img)
-	}
 
 	/**
 	 * kv取得
@@ -567,5 +561,15 @@ export class AccountClass{
 			return null
 		}
 	}
+// #endregion
 
+
+// #region *************キャッシュ処理*******************
+	addCache(key,data){
+		this.cache[key] = data
+	}
+	getCache(key){
+		return this.cache[key]
+	}
+// #endregion
 }

@@ -21,7 +21,7 @@
 	let isStocklistOption = $state(false)
 	let selectedNameEditor=$state(false)
 
-	const MAX_ONE_PAGE_ROW=100
+	const MAX_ONE_PAGE_ROW=500
 
 	let listData = $state(
 		{
@@ -173,6 +173,7 @@
 	"G&P",
 	"GFORCE",
 	"GSIクレオス",
+	"ガイアノーツ",
 	"HMC",
 	"HYUGA",
 	"KASSNAR",
@@ -240,7 +241,9 @@
 	"桑田商会",
 	"玄人の道",
 	"童友社",
-	"日本模型"
+	"日本模型",
+	"スジボリ堂",
+	"ウェーブ"
 ])
 
   let header = $state([
@@ -282,8 +285,7 @@
 			if(where!='')where +=' and '
 			where+= `category like '%${listData.where['category']}%'`
 		}
-		console.log(listData.where)
-    const result = await $account.getDb("products",{where:where,orderBy:'name,seriescode',fromIndex:(listData.page)*MAX_ONE_PAGE_ROW,count:MAX_ONE_PAGE_ROW})
+    const result = await $account.getDb("products",{where:where,orderBy:'category,name,seriescode',fromIndex:(listData.page)*MAX_ONE_PAGE_ROW,count:MAX_ONE_PAGE_ROW})
     if (result.ok) {
 			console.log(where)
 			const countResult = await $account.getDbCount("products",{where:where})
@@ -305,37 +307,50 @@
 	async function saveBulk(){
 		let updateData=[]
 		for(const val of listData.list){
+			let maker=val.maker
+			if(maker=='ミニ四駆'){
+				maker='タミヤ'
+			}else if(maker=='ガンダム'){
+				maker='バンダイ'
+			}
 			updateData.push({
 				brand:val.brand,
 				category:val.category,
 				jancode:val.jancode,
-				maker:val.maker,
+				maker:maker,
 				meta:val.meta,
 				name:val.name,
 				price:val.price,
 				quantity:val.quantity,
 				seo:val.seo,
 				seriescode:val.seriescode})
-			if(val.id){
-				updateData[updateData.length-1].id = val.id
+				if(val.id){
+					updateData[updateData.length-1].id = val.id
+				}
+		}
+		console.log(updateData)
+
+		// for(const key in updateData){
+		// 	// nameから「1/35」「プラモデル」「プラモデル」「同梱不可」「 」 seriescodeを空白に置換
+    //   const seriescode = String(updateData[key].seriescode ?? '').trim()
+    //   const removeWords = ['爆買','返品種別B','《発売済・在庫品》','[BANDAI SPIRITS]','《在庫切れ》','送料無料','（再販）','(プラモデル)','（再販）', seriescode]
+    //   const removePattern = removeWords
+    //     .filter((word) => word !== '')
+    //     .map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    //     .join('|')
+    //   updateData[key].name = String(updateData[key].name ?? '')
+    //     .replace(new RegExp(removePattern, 'g'), '')
+    //     .replace(/\s+/g, ' ')
+    //     .trim()
+		// }
+		/**/
+		const lastList=[]
+		for(let data of updateData){
+			if(data.name!=''){
+				console.log(data)
+				lastList.push(data)
 			}
 		}
-		/*
-		for(const key in updateData){
-			delete updateData[key].editQuantity
-			// nameから「1/35」「プラモデル」「プラモデル」「同梱不可」「 」 seriescodeを空白に置換
-      const seriescode = String(updateData[key].seriescode ?? '').trim()
-      const removeWords = ['1/35','1/ 35 ', 'プラモデル',' ※キャンセル不可',' ※キャンセル不可','ミリタリーミニチュア', '同梱不可','MM','タミヤ','TAMIYA','()','（）','返品種別B', seriescode]
-      const removePattern = removeWords
-        .filter((word) => word !== '')
-        .map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-        .join('|')
-      updateData[key].name = String(updateData[key].name ?? '')
-        .replace(new RegExp(removePattern, 'g'), '')
-        .replace(/\s+/g, ' ')
-        .trim()
-		}
-		/**/
 		await $account.upsertDb('products',updateData,'jancode')
 		await getDataList()
 	}

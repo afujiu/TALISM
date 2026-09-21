@@ -1,10 +1,11 @@
 <script>
 	import { onMount,createEventDispatcher } from "svelte"
+	import Icon from "$comp/Icon.svelte"
 	const dispatch = createEventDispatcher()
 	/*******************
 	 * argument
 	*/
-	let {value=false,size='50%'} = $props()
+	let {value=false,width='50%',height='50%',closeBtn=true} = $props()
 	/*******************
 	 * function
 	*/
@@ -18,9 +19,15 @@
 {#if value}
 	<span>
 		<div onclick={()=>{close()}} class="shadow"></div>
-		<div class="card">
+		<div class="card" style="width:{width};height:{height}">
 			<div class="popup-title">
-				<slot name="title"></slot>
+				<span><slot name="title"></slot>
+				{#if closeBtn}
+					<button class="popup-close-btn icon"
+						onclick={()=>{close()}}
+					><Icon value="close"></Icon></button>
+				{/if}
+				</span>
 			</div>
 			<div class="popup-body">
 				<slot></slot>
@@ -38,7 +45,7 @@
 		top:0;
 		width:100vw;
 		height:100vh;
-		z-index:990;
+		z-index:998!important;
 		background:rgba(0,0,0,0.6);
 		cursor:pointer;
 	}
@@ -50,20 +57,25 @@
 		bottom:0;
 		margin:auto;
 		display:block;
-		width:50%;
-		min-width:200px;
 		min-height:200px;
-		max-height:50%;
 		background:var(--main1);
-		z-index:992;
+		z-index:999!important;
 	}
 	.popup-title{
 		display:flex;
-		background:var(--base-gray1);
+		background:var(--base1);
+		vertical-align: middle;
+		padding-top:0.2em;
 		height:2em;
 		width:100%;
 		font-weight:600;
-		vertical-align: middle;
+	}
+	.popup-title span{
+		padding-left:0.5em;
+	}
+	.popup-close-btn{
+		position:absolute;
+		right:0;
 	}
 	.popup-body{
 		overflow:auto;
