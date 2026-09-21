@@ -1,6 +1,6 @@
 <script>
 	import { onMount,onDestroy,createEventDispatcher } from "svelte"
-	let { value,id } = $props();
+	let { value,id } = $props()
 	const dispatch = createEventDispatcher()
 	let x = 0
 	let y = 0

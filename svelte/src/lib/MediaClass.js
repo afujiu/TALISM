@@ -9,15 +9,35 @@ export class MediaClass{
 	 * @param {*} file 
 	 * @returns base64
 	 */
-	static fileToBase64(file) {
+	static fileToBase64(src) {
 		return new Promise((resolve, reject) => {
 			const reader = new FileReader()
 			reader.onload = () => resolve(reader.result)
 			reader.onerror = reject
-			reader.readAsDataURL(file)
+			reader.readAsDataURL(src)
 		})
 	}
 
+	/**
+	 * base64からimageオブジェクトを取得
+	 * @param {*} base64 
+	 * @returns 
+	 */
+	static base64ToImage(base64){
+		return new Promise((resolve, reject) => {
+			if (typeof base64 !== 'string' || base64.trim() === '') {
+				reject(new Error('base64画像データが空です'))
+				return
+			}
+
+			const image = new Image()
+			image.onload = () => resolve(image)
+			image.onerror = () => reject(new Error('画像の読み込みに失敗しました'))
+			image.src = base64.startsWith('data:')
+				? base64
+				: `data:image/jpeg;base64,${base64}`
+		})
+	}
 	/**
 	 * base64からfileを取得
 	 * @param {*} base64 
@@ -42,6 +62,60 @@ export class MediaClass{
 		});
 	}
 
+	/**
+	 * base64画像をグレースケール化
+	 * @param {string} base64
+	 * @returns {Promise<string>}
+	 */
+	static async grayscaleBase64(base64){
+		const image = await MediaClass.base64ToImage(base64)
+		const canvas = document.createElement('canvas')
+		canvas.width = image.naturalWidth
+		canvas.height = image.naturalHeight
+
+		const context = canvas.getContext('2d')
+		if (!context) throw new Error('Canvas 2Dコンテキスト取得失敗')
+
+		context.filter = 'grayscale(100%)'
+		context.drawImage(image, 0, 0)
+		return canvas.toDataURL('image/png')
+	}
+
+	/**
+	 * 二値化
+	 * @param {string} base64
+	 * @param {number} [limit=128] 二値化の閾値（0〜255）
+	 * @returns {Promise<string>}
+	 */
+	static async binarizeBase64(base64,limit=128){
+		const image = await MediaClass.base64ToImage(base64)
+		const numericLimit = Number(limit)
+		const threshold = Number.isFinite(numericLimit)
+			? Math.min(255, Math.max(0, numericLimit))
+			: 128
+		const canvas = document.createElement('canvas')
+		canvas.width = image.naturalWidth
+		canvas.height = image.naturalHeight
+
+		const context = canvas.getContext('2d')
+		if (!context) throw new Error('Canvas 2Dコンテキスト取得失敗')
+
+		context.drawImage(image, 0, 0)
+		const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
+		for (let index = 0; index < imageData.data.length; index += 4) {
+			const luminance =
+				(0.299 * imageData.data[index]) +
+				(0.587 * imageData.data[index + 1]) +
+				(0.114 * imageData.data[index + 2])
+			const value = luminance >= threshold ? 255 : 0
+			imageData.data[index] = value
+			imageData.data[index + 1] = value
+			imageData.data[index + 2] = value
+		}
+		context.putImageData(imageData, 0, 0)
+
+		return canvas.toDataURL('image/png')
+	}
 	/**
 	 * アップロードファイルの画像サイズを取得
 	 * @param {*} file 
@@ -89,10 +163,8 @@ export class MediaClass{
 				resolve({width:0,height:0})
 				return
 			}
-
 			const mime = base64.match(/^data:(image|video)\/([^;,]+)[;,]/i)?.[1]?.toLowerCase()
 			const src = base64.startsWith('data:') ? base64 : `data:${mime || 'image/jpeg'};base64,${base64}`
-
 			if (mime === 'image') {
 				const image = new Image()
 				image.onload = () => resolve({width:image.naturalWidth,height:image.naturalHeight})
@@ -270,7 +342,6 @@ export class MediaClass{
 	 * webmビデオのデータを圧縮
 	 * ※FFmpegを使用
 	 * ※音声は保持されません
-	 *
 	 * @param {string} base64
 	 * @returns {Promise<{base64:string,size:number}>}
 	 */
@@ -319,7 +390,6 @@ export class MediaClass{
 
 		await ffmpeg.deleteFile('input.webm')
 		await ffmpeg.deleteFile('output.webm')
-
 		return {
 			base64: resultBase64,
 			size: webmBlob.size
