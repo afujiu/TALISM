@@ -21,7 +21,7 @@
 	let isStocklistOption = $state(false)
 	let selectedNameEditor=$state(false)
 
-	const MAX_ONE_PAGE_ROW=500
+	const MAX_ONE_PAGE_ROW=200
 
 	let listData = $state(
 		{
