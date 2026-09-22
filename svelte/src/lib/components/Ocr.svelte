@@ -23,12 +23,19 @@
 	let stream = $state(/** @type {MediaStream|null} */ (null))
 	// 納品書矩形枠を作成する
 	let scanRect = $state({s:{x:0,y:0},e:{x:0,y:0}})
+	// struct(パーセント座標)から実座標の一覧
 	let realStruct = $state([])
+	// 選択した矩形範囲編集用の座標オブジェクト格納(未選択:null,開始:s,終了:e)
 	let selectRect = $state(null)
 	const befPos = $state({x:0,y:0})
+
 	let isLoading = $state(true)
+	// 抽出した文字列の座標込み一覧{sx,sy,ex,dy,text,poly,isHit}
 	let extractionList = $state([])
+
 	let extractionState=$state('')
+	// 抽出文字の修正モードフラグ(固定:false,編集:true)
+	let isEditExtractionText=$state(false)
 	//二値化閾値
 	let binarizeLimit = $state(128)
 	/*******************
@@ -67,7 +74,6 @@
 	async function getImageCamera(){
 		stopImageCamera()
 		const changeCameraOption= async()=>{
-			console.log('changeCameraOption')
 			try{
 				let width=window.innerWidth
 				let height=window.innerHeight
@@ -79,7 +85,6 @@
 					},audio: false})
 				if (video) video.srcObject = stream
 			} catch (e) {
-				console.error('カメラの起動に失敗:', e)
 				$ui.addNotification(`${$ui.selectedMenuName} カメラの起動に失敗`,async()=>{
 					return {status:true,message:`エラー:${e instanceof Error ? e.message : String(e)}`}
 				})
@@ -145,24 +150,20 @@
 		extractionList=[]
 		extractionState=''
 		imageBase64 = base64
-		showImageBase64= await MediaClass.binarizeBase64(base64,binarizeLimit)
+		showImageBase64= base64
 		imageSize.width = width
 		imageSize.height = height
-		scanRect.s.x = 20
-		scanRect.s.y = 20
-		scanRect.e.x = width-20
-		scanRect.e.y = height-20
+		//初期だけ場所指定
+		if(scanRect.s.x==0 && scanRect.e.x==0){
+			scanRect.s.x = 20
+			scanRect.s.y = 20
+			scanRect.e.x = width-20
+			scanRect.e.y = height-20
+		}
 		resizeScanRect()
 		await extraction()
 	}
 
-	/**
-	 * 画像の編集
-	 */
-	async function retouchImage(){
-		showImageBase64= await MediaClass.binarizeBase64(imageBase64,binarizeLimit)
-		await extraction()
-	}
 	/**
 	 * スキャン範囲が変わった時、realStructを変更する
 	 */
@@ -173,8 +174,10 @@
 			const targetY = (block.py/100)*getClippingHeight()+scanRect.s.y
 			const targetW = (block.pw/100)*getClippingWidth()
 			const targetH = (block.ph/100)*getClippingHeight()
-			realStruct.push({id:block.id,x:targetX,y:targetY,width:targetW,height:targetH})
+			realStruct.push({id:block.id,x:targetX,y:targetY,width:targetW,height:targetH,isHit:null})
 		}
+		updateExtractionHits()
+
 	}
 
 	function getClippingWidth(){
@@ -184,6 +187,8 @@
 		return scanRect.e.y-scanRect.s.y
 	}
 
+
+//#region 取得範囲矩形の操作
 	/**
 	 * 範囲をダウン
 	*/
@@ -218,6 +223,20 @@
 		const y = Math.round(e.clientY-rect.top)
 		selectRect.x += (x - befPos.x)
 		selectRect.y += (y - befPos.y)
+		if(selectRect.x<0){
+			selectRect.x=1
+		}
+		if(imageSize.width<selectRect.x){
+			selectRect.x=imageSize.width-1
+		}
+
+			if(selectRect.y<0){
+			selectRect.y=1
+		}
+		if(imageSize.height<selectRect.y){
+			selectRect.y=imageSize.height-1
+		}
+
 		befPos.x = x
 		befPos.y = y
 		resizeScanRect()
@@ -231,7 +250,10 @@
 	function upScanRange(e){
 		selectRect=null
 	}
+//#endregion
 
+
+//#region 文字抽出
 	/**
 	 * 文字抽出
 	 */
@@ -250,12 +272,94 @@
 				ex:item.poly[1][0],
 				ey:item.poly[1][1],
 				text:item.text,
-				poly:item.poly
+				poly:item.poly,
+				isHit:null,
 			})
 		}
+		updateExtractionHits()
 		extractionState='抽出完了'
 	}
 
+	/**
+	 * 抽出文字の矩形とstructブロックの交差状態を更新する
+	 */
+	function updateExtractionHits(){
+		for(const extraction of extractionList) extraction.isHit = null
+		for(const block of realStruct) block.isHit = null
+
+		for(const extraction of extractionList){
+			const block = realStruct.find((block) =>
+				extraction.sx < block.x + block.width &&
+				extraction.ex > block.x &&
+				extraction.sy < block.y + block.height &&
+				extraction.ey > block.y
+			)
+			if(block){
+				extraction.isHit = block
+				block.isHit = extraction
+			}
+		}
+	}
+
+//#endregion
+
+
+	/**
+	 * 不足追加
+	 * realStructでisHitがnullの要素(必要な文字を取得できていない)座標にExtractionを追加する
+	 */
+	function addExtractionList(){
+		for(const block of realStruct.filter((item) => item.isHit === null)){
+			extractionList.push({
+				sx:block.x+(block.width/2),
+				sy:block.y+(block.height/2),
+				ex:block.x+block.width,
+				ey:block.y+block.height,
+				text:'',
+				poly:null,
+				isHit:null
+			})
+		}
+		resizeScanRect()
+	}
+
+	/**
+	 * 確定
+	 */
+	function confirm(){
+		let rowsList={}
+		for(const i in realStruct){
+			const block =realStruct[i]
+			if(block.isHit==null){
+				continue
+			}
+			const extraction = block.isHit
+			if(extraction.text==''){
+				continue
+			}
+			let [key, idx] = block.id.split('_')
+			if(rowsList[idx]==null){
+				rowsList[idx]=[]
+			}
+			rowsList[idx].push({key:key,text:extraction.text})
+		}
+		rowsList = Object.fromEntries(
+			Object.entries(rowsList).sort(([left], [right]) => Number(left) - Number(right))
+		)
+		const resultList=[]
+		for(let i in rowsList){
+			const data = rowsList[i]
+			const oneRow={}
+			for(let oneRowData of data){
+				oneRow[oneRowData.key] = oneRowData.text
+			}
+			resultList.push(oneRow)
+		}
+		isPopup=false
+		stopImageCamera()
+		imageBase64=null
+		dispatch('extraction',resultList)
+	}
 	/**
 	 *　ポップアップを閉じて初期化する
 	 */
@@ -298,14 +402,14 @@
 					style="width:{imageSize.width}px;height:{imageSize.height}px;"
 				>
 				<!-- structに応じてOCRする範囲を表示-->
-				{#each realStruct as item}
+				{#each realStruct as block}
 					<rect
-						x={item.x}
-						y={item.y}
-						width={item.width}
-						height={item.height}
-						stroke={selectRect!=null?'blue':'red'}
+						x={block.x}
+						y={block.y}
+						width={block.width}
+						height={block.height}
 						fill="rgba(255,0,0,0.0)"
+						stroke={block.isHit?'blue':'red'}
 						stroke-width="2"
 					/>
 				{/each}
@@ -340,15 +444,24 @@
 					>
 					</rect>
 				</svg>
+				<!--抽出文字(固定)-->
+					{#if !isEditExtractionText}
+						{#each extractionList as data}
+							<span class="extraction-text" style="left:{data.sx}px;top:{data.sy}px; color:{data.isHit?'blue':'red'};">{data.text}</span>
+						{/each}
+					{/if}
 				<!-- タッチ範囲-->
 				<div class="surface" style="width:{imageSize.width}px;height:{imageSize.height}px;"
 					onpointerdown={(e)=>{downScanRange(e)}} 
 					onpointermove={(e)=>{moveScanRange(e)}}
 					onpointerup={(e)=>{upScanRange(e)}}
 				></div>
-				{#each extractionList as data}
-				<input type="text" class="extraction-text" style="left:{data.sx}px;top:{data.sy}px;" bind:value={data.text}>
-				{/each}
+				<!--抽出文字-->
+					{#if isEditExtractionText}
+					{#each extractionList as data}
+						<input type="text" class="extraction-text" style="left:{data.sx}px;top:{data.sy}px;color:{data.isHit?'blue':'red'};" bind:value={data.text}>
+					{/each}
+					{/if}
 			{/if}
 			</div>
 		</div>
@@ -363,11 +476,19 @@
 					{:else}
 						<span class="f1"><button class="btn confirm-btn" style="vertical-align:middle;" onclick={shotCamera}><Icon value="camera"></Icon><span>撮影</span></button></span>
 					{/if}
-					
 				{:else}
 					<span class="f1"><button class="btn reset-btn" onclick={init}>戻る</button></span>
-					<span class="f1"><input type="range" bind:value={binarizeLimit} onchange={async()=>{await retouchImage()}} min=1 max=255 step=1></span>
-					<span class="f1"><button class="btn confirm-btn" onclick={async()=>{await extraction()}}>抽出</button></span>
+					<span class="f1">
+						<button class="btn" onclick={()=>{isEditExtractionText=!isEditExtractionText}}>
+							{#if isEditExtractionText}
+							<Icon value="lock"></Icon>固定
+							{:else}
+							<Icon value="edit"></Icon>編集
+							{/if}
+						</button>
+					</span>
+					<span class="f1"><button class="btn" onclick={()=>{addExtractionList()}}>不足追加</button></span>
+					<span class="f1"><button class="btn confirm-btn" onclick={async()=>{await confirm()}}>抽出</button></span>
 				{/if}
 				</div>
 			</Loading>
@@ -391,11 +512,18 @@
 		top:0;
 		width:0;
 		height:0;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
 	}
 	.extraction-text{
 		position:absolute;
 		background:rgba(0,0,0,0);
 		border:none;
+		border-bottom:solid 1px;
+		border-color:black;
 		font-size:15px;
 		color:red;
 	}

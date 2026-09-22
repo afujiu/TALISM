@@ -8,9 +8,13 @@
 	import Fab from '$comp/Fab.svelte'
 	import Loading from '$comp/Loading.svelte'
 	import Ocr from '$comp/Ocr.svelte'
+    import Icon from '$lib/components/Icon.svelte'
 
-	let isLoading=$state(true)
-	let isOcr =$state(false)
+	let isLoading = $state(true)
+	let isOcr = $state(false)
+	let page = $state(0)
+	let ocrStructType=$state(0)
+
 
 	/*******************
 	 * argument */
@@ -75,30 +79,79 @@
 			]},
 			{name:'名古屋ガンショップ',struct:[]}
 		])
-	let ocrStructMode=$state(0)
+
 
 	onMount(async () => {
+		page=0
 		isLoading=false
 	})
 </script>
 	<Loading {isLoading}>
 	<article>
-	{isOcr}
-		<Ocr title="納品書OCR[{OCR_STRUCT[ocrStructMode].name}]" bind:isPopup={isOcr} struct={OCR_STRUCT[ocrStructMode].struct}></Ocr>
+		<!--ログ一覧-->
+		{#if page==0}
+		<div>
+			ログ一覧
+			<table class="full-width">
+				<thead>
+					<tr>
+						<th>日時</th>
+						<th>納品元</th>
+						<th>件数</th>
+						<th>状況</th>
+						<th>更新</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td></td>
+						<td></td>
+						<td></td>
+						<td></td>
+						<td><button class="btn icon"><Icon value="edit"></Icon></button></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		{:else if page==1}
+		<!--新規登録-->
+		<div>
+			新規登録
+		</div>
+		{/if}
+
+		<!--OCR-->
+		<Ocr 
+			title="納品書OCR[{OCR_STRUCT[ocrStructType].name}]"
+			bind:isPopup={isOcr}
+			struct={OCR_STRUCT[ocrStructType].struct}
+			on:extraction={(e)=>{console.log(e.detail)}}
+			></Ocr>
+		<!--FAB-->
 		<Fab>
+		{#if page==0}
+		<!--ログ一覧-->
+			<span class="f1"><button class="btn">検索</button></span>
+			<span class="f1"><button class="btn confirm-btn" onclick={()=>{page=1}}>新規登録</button></span>
+		{:else if page==1}
+		<!--新規登録-->
+			<span class="f1">
+				<button class="btn reset-btn" onclick={()=>{page=0}}>ログ一覧</button>
+			</span>
 			<span class="f1">
 				<Input
 					type="select"
 					list={OCR_STRUCT.map((item, index) => ({label: item.name, value: index}))}
-					bind:value={ocrStructMode}
+					bind:value={ocrStructType}
 				></Input>
 			</span>
 			<span class="f1">
-				<button class="btn reset-btn" onclick={()=>{isOcr=true}}>納品書スキャン</button>
+				<button class="btn" onclick={()=>{isOcr=true}}>納品書スキャン</button>
 			</span>
 			<span class="f1">
-				<button class="btn confirm-btn">Save</button>
+				<button class="btn confirm-btn">登録</button>
 			</span>
+		{/if}
 		</Fab>
 	</article>
 	</Loading>
