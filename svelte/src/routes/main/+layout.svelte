@@ -31,8 +31,18 @@
 				goto('/')
 				return
 			})
-			const resultMenus = await $account.getDb('menus')
-			const resultSettings = await $account.getDb('settings')
+			
+			let resultSettings = $account.settingsLs
+			let resultMenus = $account.menuListLs
+			if(resultSettings==null){
+				resultSettings = await $account.getDb('settings')
+				$account.settingsLs=resultSettings
+			}
+
+			if(resultMenus==null){
+				resultMenus = await $account.getDb('menus')
+				$account.menuListLs = resultMenus
+			}
 			if(resultMenus.ok&&resultSettings.ok){
 				$account.setSettings(resultSettings.data)
 				$ui.setSettings(resultSettings.data,resultMenus.data)

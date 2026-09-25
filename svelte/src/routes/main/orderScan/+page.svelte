@@ -8,13 +8,104 @@
 	import Fab from '$comp/Fab.svelte'
 	import Loading from '$comp/Loading.svelte'
 	import Ocr from '$comp/Ocr.svelte'
-    import Icon from '$lib/components/Icon.svelte'
+	import Icon from '$comp/Icon.svelte'
+	import Format from '$comp/Format.svelte'
 
 	let isLoading = $state(true)
 	let isOcr = $state(false)
-	let page = $state(0)
+	let mode = $state(0)
 	let ocrStructType=$state(0)
+	// 履歴データ
+	/**
+	 * 履歴データ
+	 * value:{count:1,state:"未確認,確認中,確認済,不一致",list:[{deliverySource,page,no,jancode,name,price,taxprice,quarity}]}
+	 */
+	const commonData = $state(
+		{
+			commonPage:0,
+			isOpen:false,
+			totalCount:0,
+			list:[],
+			get:async()=>{
+				commonData.list = []
+				const where ="type='orderList'"
+				const result = await $account.getDb('common',{select:'id,created_at,overview',where:where,orderBy:[{column:'created_at',asc:false}],fromIndex:(commonData.commonPage)*MAX_ONE_PAGE_ROW,count:MAX_ONE_PAGE_ROW})
+				if(result.ok){
+					const countResult = await $account.getDbCount("common",{where:where})
+					if(countResult.ok){
+						commonData.totalCount = countResult.data
+					}
+					for(let data of result.data){
+						commonData.list.push({
+							id:data.id,
+							created_at:data.created_at,
+							deliverySource:data.overview.deliverySource,
+							count:data.overview.count,
+							state:data.overview.state,
+						})
+					}
+				}
+			},
+			// 納品書のデータ初期化
+			initOrder:()=>{
+				commonData.selectedId=null
+				commonData.oneOrderList=[]
+				commonData.orderPage=1
+			},
+			// 納品書データを選択する
+			selectOrder:async(id)=>{
+				const result = await $account.getDb('common',{
+					select:'id,created_at,overview,detail',
+					where:`id='${id}'`}) 
+				if(result.ok){
+					commonData.selectedId=id
+					commonData.oneOrderList=[...result.data[0].detail.list]
+					commonData.orderPage=1
+					mode=1
+				}else{
+					commonData.selectedId=null
+					commonData.oneOrderList=[]
+					mode=0
+				}				
+			},
+			orderPage:1,
+			selectedId:null,
+			oneOrderList:[],
+			//OCRからデータ追加
+			addOrderList:(ocrList)=>{
+				const deliverySource = OCR_STRUCT[ocrStructType].name
+				const page = commonData.orderPage
+				const orderList = ocrList.map((data, index) => ({
+					deliverySource,
+					page,
+					no:index + 1,
+					jancode:data.jancode,
+					name:'',
+					price:data.price,
+					taxprice:Math.floor(data.price * 1.1),
+					quantity:data.quantity,
+				}))
+				const firstIndex = commonData.oneOrderList.findIndex((data) =>
+					data.deliverySource === deliverySource && data.page === page
+				)
+				if(firstIndex === -1){
+					commonData.oneOrderList.push(...orderList)
+				}else{
+					const insertIndex = commonData.oneOrderList
+						.slice(0, firstIndex)
+						.filter((data) => data.deliverySource !== deliverySource || data.page !== page)
+						.length
+					const remaining = commonData.oneOrderList.filter((data) =>
+						data.deliverySource !== deliverySource || data.page !== page
+					)
+					remaining.splice(insertIndex, 0, ...orderList)
+					commonData.oneOrderList = remaining
+				}
+				commonData.orderPage++
+			}
+		})
 
+	const MAX_ONE_PAGE_ROW=20
 
 	/*******************
 	 * argument */
@@ -80,43 +171,133 @@
 			{name:'名古屋ガンショップ',struct:[]}
 		])
 
-
 	onMount(async () => {
-		page=0
+		mode=0
 		isLoading=false
+		await getCommonList()
 	})
+
+	/**
+	 * 履歴一覧データ取得
+	 */
+	async function getCommonList(){
+		await commonData.get()
+	}
+
+	/**
+	 * 登録
+	 */
+	async function confirm(){
+		if(window.confirm("更新しますか")==false){
+			return
+		}
+		$ui.addNotification(`${$ui.selectedMenuName} 中古情報の更新`,async()=>{
+			isLoading=true
+			const list = commonData.oneOrderList
+			if(commonData.selectedId==null){
+				//新規登録
+				$account.insertDb('common',{
+					type:'orderList',
+					overview:{
+						count: list.length,
+						state: '確認中'
+					},
+					detail:{
+						list: list,
+					}
+				})
+			}else{
+				//修正
+				let state='確認中'
+				const oneOrder = commonData.list.find(v=>v.id==commonData.selectedId)
+				if(oneOrder!=undefined){
+					state = oneOrder.state
+				}
+				$account.upsertDb('common',{
+					id:commonData.selectedId,
+					type:'orderList',
+					detail:{
+						list: list,
+					},
+					overview:{
+						count: list.length,
+						state: state,
+					}
+				},'id')
+			}
+			setTimeout(async() => {
+				await commonData.get()
+				mode=0
+				isLoading=false
+			}, 2000)
+			
+			return {status:true,message:'更新完了'}
+		})
+	}
 </script>
 	<Loading {isLoading}>
 	<article>
-		<!--ログ一覧-->
-		{#if page==0}
+		<!--履歴一覧-->
+		{#if mode==0}
 		<div>
-			ログ一覧
+			履歴一覧
+			<Loading isLoading={commonData.list.length==0}>
 			<table class="full-width">
-				<thead>
+				<thead class="sticky">
 					<tr>
-						<th>日時</th>
-						<th>納品元</th>
-						<th>件数</th>
-						<th>状況</th>
-						<th>更新</th>
+						<th style="width:12em;">日時</th>
+						<th style="width:5em;">行数</th>
+						<th style="width:5em;">状況</th>
+						<th style="width:3em;">更新</th>
 					</tr>
 				</thead>
 				<tbody>
+				{#each commonData.list as val}
 					<tr>
-						<td></td>
-						<td></td>
-						<td></td>
-						<td></td>
-						<td><button class="btn icon"><Icon value="edit"></Icon></button></td>
+						<td class="align-center">
+							<Format type="date-time" value={val.created_at}></Format>
+						</td>
+						<td class="align-center"><Format type="number" value={val.count}></Format>行</td>
+						<td class="align-center">{val.state}</td>
+						<td><button class="btn confirm-btn" onclick={async()=>{await commonData.selectOrder(val.id)}}><Icon value="edit"></Icon></button></td>
 					</tr>
+				{/each}
 				</tbody>
 			</table>
+			</Loading>
 		</div>
-		{:else if page==1}
+		{:else if mode==1}
 		<!--新規登録-->
 		<div>
-			新規登録
+			納品書登録
+			<table class="full-width">
+				<thead class="sticky">
+					<tr>
+						<th style="width:6em;">納品元</th>
+						<th style="width:3em;">ページ</th>
+						<th style="width:3em;">No</th>
+						<th style="width:8em;">JANコード</th>
+						<th>名前</th>
+						<th style="width:4em;">単価</th>
+						<th style="width:4em;">税込</th>
+						<th style="width:3em;">数量</th>
+					</tr>
+				</thead>
+				<tbody>
+				{#each commonData.oneOrderList as val}
+					<tr>
+						<td>{val.deliverySource}</td>
+						<td>{val.page}</td>
+						<td>{val.no}</td>
+						<td><Input type="number" bind:value={val.jancode}/></td>
+						<td><Input type="text"  bind:value={val.name}/></td>
+						<td><Input type="number" bind:value={val.price}/></td>
+						<td><Input type="number" bind:value={val.taxprice}/></td>
+						<td><Input type="number" bind:value={val.quantity}/></td>
+					</tr>
+					{/each}
+				</tbody>
+			</table>
 		</div>
 		{/if}
 
@@ -125,18 +306,43 @@
 			title="納品書OCR[{OCR_STRUCT[ocrStructType].name}]"
 			bind:isPopup={isOcr}
 			struct={OCR_STRUCT[ocrStructType].struct}
-			on:extraction={(e)=>{console.log(e.detail)}}
+			on:extraction={(e)=>{ commonData.addOrderList(e.detail)}}
 			></Ocr>
 		<!--FAB-->
 		<Fab>
-		{#if page==0}
-		<!--ログ一覧-->
-			<span class="f1"><button class="btn">検索</button></span>
-			<span class="f1"><button class="btn confirm-btn" onclick={()=>{page=1}}>新規登録</button></span>
-		{:else if page==1}
-		<!--新規登録-->
+		{#if mode==0}
+		<!--履歴一覧-->
+		<span class="f1">
+				<button class="btn"
+					disabled={0>=commonData.commonPage}
+					onclick={async()=>{
+						if(0<commonData.commonPage){
+							commonData.commonPage--
+							await commonData.get()
+						}
+					}}
+				><Icon value="arrow_back_ios"></Icon></button>
+			</span>
+			<!-- 進む-->
 			<span class="f1">
-				<button class="btn reset-btn" onclick={()=>{page=0}}>ログ一覧</button>
+				<button class="btn" 
+					disabled={commonData.totalCount<(MAX_ONE_PAGE_ROW*(commonData.commonPage+1))}
+					onclick={async()=>{
+						commonData.commonPage++
+						await commonData.get()
+					}}
+				><Icon value="arrow_forward_ios"></Icon></button>
+			</span>
+			<!--ページ数　件数-->
+			<span class="f2 align-center" style="background:var(--main1);">
+				<div>{commonData.commonPage+1}/{Math.ceil(commonData.totalCount/MAX_ONE_PAGE_ROW)}</div>
+				<div><Format type="number" value={commonData.totalCount}></Format>件</div>
+			</span>
+			<span class="f1"><button class="btn confirm-btn" onclick={()=>{commonData.initOrder();mode=1;}}>新規登録</button></span>
+		{:else if mode==1}
+		<!--登録-->
+			<span class="f1">
+				<button class="btn reset-btn" onclick={()=>{mode=0}}>履歴一覧</button>
 			</span>
 			<span class="f1">
 				<Input
@@ -146,10 +352,13 @@
 				></Input>
 			</span>
 			<span class="f1">
+				<Input type="number" bind:value={commonData.orderPage} min=1 max=100 step=1/>
+			</span>
+			<span class="f1">
 				<button class="btn" onclick={()=>{isOcr=true}}>納品書スキャン</button>
 			</span>
 			<span class="f1">
-				<button class="btn confirm-btn">登録</button>
+				<button class="btn confirm-btn" onclick={async()=>{await confirm()}}>登録</button>
 			</span>
 		{/if}
 		</Fab>

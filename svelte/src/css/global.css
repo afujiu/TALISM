@@ -141,6 +141,11 @@ section article{
 	backdrop-filter: blur(2px);
 	-webkit-backdrop-filter: blur(2px);
 }
+.sticky{
+	position:sticky;
+	position:-webkit-sticky;
+	top:0;
+}
 
 .active-btn{
 	color:white;
@@ -211,10 +216,13 @@ button.icon{
 		border-color:black;
 		background:transparent;
 	}
+	
 	tbody tr:nth-child(even):not(.selected){
+		-webkit-filter: brightness(0.99);
 		filter: brightness(0.99);
 	}
 		tbody tr:nth-child(even):not(.selected) *{
+		-webkit-filter: brightness(0.99);
 		filter: brightness(0.99);
 	}
 
@@ -255,6 +263,9 @@ button.icon{
 		height:100%;
 		background:var(--main1);
 		text-align:center;
+		-webkit-filter: brightness(1);
+		filter: brightness(1);
+		z-index:800;
 	}
 
 	.first-td button{

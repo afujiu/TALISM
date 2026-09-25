@@ -15,6 +15,38 @@ export class AccountClass{
 		this.cache={}
 	}
 
+
+
+	/**
+	 * 設定をlocalstorageから取得
+	 */
+	get settingsLs(){
+		const data=localStorage.getItem('settings')
+		if(data==null){
+			return null
+		}
+		return JSON.parse(data)
+	}
+	set settingsLs(settings){
+		localStorage.setItem('settings',JSON.stringify(settings))
+	}
+	get menuListLs(){
+		const data=localStorage.getItem('menuList')
+		if(data==null){
+			return null
+		}
+		return JSON.parse(data)
+	}
+	set menuListLs(menuList){
+		localStorage.setItem('menuList',JSON.stringify(menuList))
+	}
+	removeSettingsLs(){
+		localStorage.removeItem('settings')
+	}
+	removeMenuList(){
+		localStorage.removeItem('menuList')
+	}
+
 // #region ************supabaseのログイン処理*************
 
 	/**
@@ -69,6 +101,8 @@ export class AccountClass{
 	 */
 	logout(){
 		supabase.auth.signOut()
+		this.removeSettingsLs()
+		this.removeMenuList()
 	}
 
 	/**
@@ -106,7 +140,7 @@ export class AccountClass{
 	/**
 	 * DBからデータ取得
 	 * @param {*} from 
-	 * @param {{select?:string,where?:string|null,orderBy?:string|{column:string,ascending?:boolean}|null,fromIndex?:number|null,count?:number|null,countOnly?:boolean}} options
+	 * @param {{select?:string,where?:string|null,orderBy?:string|{column:string,ascending?:boolean}|Array<{column:string,ascending?:boolean}>|null,fromIndex?:number|null,count?:number|null,countOnly?:boolean}} options
 	 * return {ok:true or false,data:data,message:message}
 	 * 
 	 * 使用例:
@@ -116,7 +150,7 @@ export class AccountClass{
 	 * await account.getDb('products', {
 	 *   select: 'id,name,quantity',
 	 *   where: "quantity > 0 or category = '工具'",
-	 *   orderBy: {column: 'name', ascending: true},
+	 *   orderBy: {column: 'name', asc: true},
 	 *   fromIndex: 0,
 	 *   count: 20
 	 * })
@@ -207,9 +241,17 @@ export class AccountClass{
 		if (orderBy) {
 			if (typeof orderBy === 'string') {
 				query = query.order(orderBy, { ascending: true })
+			} else if (Array.isArray(orderBy)) {
+				for (const order of orderBy) {
+					if (order?.column) {
+						query = query.order(order.column, {
+							ascending: order.ascending !== false
+						})
+					}
+				}
 			} else if (typeof orderBy === 'object' && orderBy.column) {
 				query = query.order(orderBy.column, {
-					ascending: orderBy.ascending !== false
+					ascending: orderBy.asc !== false
 				})
 			}
 		}
@@ -562,7 +604,6 @@ export class AccountClass{
 		}
 	}
 // #endregion
-
 
 // #region *************キャッシュ処理*******************
 	addCache(key,data){

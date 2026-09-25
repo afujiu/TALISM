@@ -287,9 +287,7 @@
 		}
     const result = await $account.getDb("products",{where:where,orderBy:'category,name,seriescode',fromIndex:(listData.page)*MAX_ONE_PAGE_ROW,count:MAX_ONE_PAGE_ROW})
     if (result.ok) {
-			console.log(where)
 			const countResult = await $account.getDbCount("products",{where:where})
-			console.log(countResult)
 			if(countResult.ok){
 				listData.totalCount = countResult.data
 			}
@@ -368,19 +366,19 @@
 		</div>
 		<!--テーブル-->
 		<Loading isLoading={!listData.isOpen}>
-      <table>
-        <thead>
+      <table class="full-width">
+        <thead class="sticky">
           <tr>
 						{#if listData.where.maker==''}
-            <th style="width:7em;">メーカー</th>
+            <th>メーカー</th>
 						{/if}
 						{#if listData.where.category==''}
-            <th style="width:18em;">カテゴリー</th>
+            <th>カテゴリー</th>
 						{/if}
-            <th class="stock-code">コード</th>
+            <th>コード</th>
             <th class="stock-name" onclick={(()=>{selectedNameEditor=!selectedNameEditor})}>品名</th>
-            <th style="width:2em;">数量</th>
-            <th style="width:2em;">単価</th>
+            <th>数量</th>
+            <th>単価</th>
             <th>JANコード</th>
           </tr>
         </thead>
@@ -590,9 +588,7 @@
     overflow-y:hidden;
 		background:white;
 	}
-	th {
-		box-sizing: border-box;
-	}
+
   td {
     height: 2em;
     min-width: 5em;
