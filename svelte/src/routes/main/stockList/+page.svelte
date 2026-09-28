@@ -12,7 +12,7 @@
   import Input from "$comp/Input.svelte"
   import Popup from "$comp/Popup.svelte"
 	import ContentsMenu from "$comp/ContentsMenu.svelte"
-  import { MakeshopClass } from "$lib/MakeshopClass"
+  import { ProductsClass } from "$lib/ProductsClass"
 
   /*******************
    * argument
@@ -20,6 +20,7 @@
   let isLoading = $state(true)
 	let isStocklistOption = $state(false)
 	let selectedNameEditor=$state(false)
+	let beforeEditData=null
 
 	const MAX_ONE_PAGE_ROW=200
 
@@ -27,7 +28,7 @@
 		{
 			page:0,
 			isOpen:false,
-			where:{maker:'',category:''},
+			where:{maker:'',category:'',name:''},
 			totalCount:0,
 			list:[]}
 	)
@@ -60,7 +61,6 @@
 							})
 						}
 					}
-					console.log(saveList)
 					await $account.upsertDb('products',saveList,'jancode')
 					listData.page=1
 					await getDataList()
@@ -130,7 +130,7 @@
 		}
 	})
 
-  const categoryList = MakeshopClass.categoryList
+  const categoryList = ProductsClass.categoryList
 
   const makerList = $state([
 	"タミヤ",
@@ -276,6 +276,7 @@
 	 * データ取得
 	 */
 	async function getDataList(){
+		beforeEditData = null
 		listData.isOpen=false
 		let where = ''
 		if(listData.where['maker']!=''){
@@ -284,6 +285,10 @@
 		if(listData.where['category']!=''){
 			if(where!='')where +=' and '
 			where+= `category like '%${listData.where['category']}%'`
+		}
+		if(listData.where['name']!=''){
+			if(where!='')where +=' and '
+			where+= `name like '%${listData.where['name']}%'`
 		}
     const result = await $account.getDb("products",{where:where,orderBy:'category,name,seriescode',fromIndex:(listData.page)*MAX_ONE_PAGE_ROW,count:MAX_ONE_PAGE_ROW})
     if (result.ok) {
@@ -295,8 +300,23 @@
       for (let idx in listData.list) {
         listData.list[idx]["editQuantity"] = null
       }
+			beforeEditData = JSON.stringify(listData.list)
     }
 		listData.isOpen=true
+	}
+
+	/**
+	 * ページ移動する時に、修正があったら更新を実行するか確認
+	 */
+	async function checkEditable(){
+		// 変更がある場合
+		if(beforeEditData!=JSON.stringify(listData.list)){
+			if(window.confirm("変更があります。更新しますか")==false){
+				return
+			}
+			beforeEditData=JSON.stringify(listData.list)
+			await saveBulk()
+		}
 	}
 
 	/**
@@ -326,41 +346,27 @@
 					updateData[updateData.length-1].id = val.id
 				}
 		}
-		console.log(updateData)
 
-		// for(const key in updateData){
-		// 	// nameから「1/35」「プラモデル」「プラモデル」「同梱不可」「 」 seriescodeを空白に置換
-    //   const seriescode = String(updateData[key].seriescode ?? '').trim()
-    //   const removeWords = ['爆買','返品種別B','《発売済・在庫品》','[BANDAI SPIRITS]','《在庫切れ》','送料無料','（再販）','(プラモデル)','（再販）', seriescode]
-    //   const removePattern = removeWords
-    //     .filter((word) => word !== '')
-    //     .map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-    //     .join('|')
-    //   updateData[key].name = String(updateData[key].name ?? '')
-    //     .replace(new RegExp(removePattern, 'g'), '')
-    //     .replace(/\s+/g, ' ')
-    //     .trim()
-		// }
-		/**/
 		const lastList=[]
 		for(let data of updateData){
 			if(data.name!=''){
-				console.log(data)
 				lastList.push(data)
 			}
 		}
 		await $account.upsertDb('products',updateData,'jancode')
-		await getDataList()
 	}
 </script>
 
 <Loading {isLoading}>
   <div class="container">
-		<div class="tab-space flex">
+		<div class="search-space flex">
 			<Input type="datalist" exclass="f1" list={makerList} placeholder="製造元" bind:value={listData.where['maker']}
 				on:change={async()=>{listData.page=0;await getDataList()}}
 			/>
 			<Input type="datalist" exclass="f1" list={categoryList} placeholder="カテゴリー" bind:value={listData.where['category']}
+			on:change={async()=>{listData.page=0;await getDataList()}}
+			/>
+			<Input type="text" exclass="f1" placeholder="品名" bind:value={listData.where['name']}
 			on:change={async()=>{listData.page=0;await getDataList()}}
 			/>
 		</div>
@@ -462,8 +468,8 @@
         <button class="btn"
 					disabled={0>=listData.page}
 					onclick={async()=>{
-						console.log('test')
 						if(0<listData.page){
+							await checkEditable()
 							listData.page--
 							await getDataList()
 						}
@@ -475,6 +481,7 @@
         <button class="btn" 
 					disabled={listData.totalCount<(MAX_ONE_PAGE_ROW*(listData.page+1))}
 					onclick={async()=>{
+						await checkEditable()
 						listData.page++
 						await getDataList()
 					}}
@@ -486,7 +493,7 @@
 				<div><Format type="number" value={listData.totalCount}></Format>件</div>
 			</span>
       <span class="f1">
-        <button class="btn confirm-btn" onclick={async()=>{await saveBulk()}}>Save</button>
+        <button class="btn confirm-btn" onclick={async()=>{await saveBulk();await getDataList()}}>Save</button>
       </span>
     </Fab>
 <!--FAB------------------------------------------------------------------->
@@ -505,7 +512,7 @@
 		<div>実数とアップロードファイルの比較</div>
 		<div>差分：{uploadData.differenceList.length}件</div>
 		<div class="upload-table">
-			<table style="width:100%;">
+			<table class="full-width">
 				<thead>
 					<tr>
 						<th style="width:5em;">JANコード</th>
@@ -572,10 +579,8 @@
   .container {
     position: relative;
 		width:100%;
-		height:100%;
-		overflow:auto;
   }
-	.tab-space{
+	.search-space{
 		position:sticky;
 		position:-webkit-sticky;
     inset:0 auto auto 0;

@@ -3,7 +3,7 @@
 --------------------------------->
 <script>
 
-	import { MakeshopClass } from "$lib/MakeshopClass.js"
+	import { ProductsClass } from "$lib/ProductsClass.js"
 	import { onMount, onDestroy } from 'svelte'
 	import { goto } from '$app/navigation'
 

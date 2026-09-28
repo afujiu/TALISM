@@ -149,7 +149,7 @@ section article{
 
 .active-btn{
 	color:white;
-	background: var(--warning);
+	background: var(--confirm);
 	transition: box-shadow 0.2s ease;
 	transition: opacity 0.2s ease;
 	backdrop-filter: blur(2px);

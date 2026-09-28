@@ -5,7 +5,7 @@
 	/*******************
 	 * argument
 	*/
-	let {value=false,width='50%',height='50%',closeBtn=true} = $props()
+	let {value=false,width='50%',height='50%',closeBtn=true,exclass=""} = $props()
 	/*******************
 	 * function
 	*/
@@ -15,9 +15,18 @@
 	function close(){
 		dispatch('close',{})
 	}
+	/** @param {HTMLElement} node */
+	function portal(node){
+		document.body.appendChild(node)
+		return {
+			destroy(){
+				node.remove()
+			}
+		}
+	}
 </script>
 {#if value}
-	<span>
+	<span class={exclass} use:portal>
 		<div onclick={()=>{close()}} class="shadow"></div>
 		<div class="card" style="width:{width};height:{height}">
 			<div class="popup-title">
