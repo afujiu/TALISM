@@ -1,10 +1,13 @@
+import { account, ui } from "$lib/store"
+import { get } from 'svelte/store'
 /**
- * makeshopクラス
+ * 商品管理クラス
  */
-export class MakeshopClass{
-	constructor(){
-	}
+export class ProductsClass{
 
+
+	static apiJancodeQueue = Promise.resolve()
+	static lastApiJancodeRequestAt = 0
   static get categoryList(){
 		return [
 		"すべての商品",
@@ -53,5 +56,65 @@ export class MakeshopClass{
 		"ツール\\材料",
 		"その他"
 		]
+	}
+
+	/**
+	 * apiからjancode取得する。(2.5秒間隔でリクエストを実施する)
+	 * @param {string} jancode
+	 * @returns {Promise<unknown>}
+	 */
+	static async getApiJancode(jancode){
+		const request = this.apiJancodeQueue.then(async () => {
+			const interval = 2500
+			const elapsed = Date.now() - this.lastApiJancodeRequestAt
+			const wait = Math.max(0, interval - elapsed)
+			if (wait > 0) {
+				await new Promise((resolve) => setTimeout(resolve, wait))
+			}
+			this.lastApiJancodeRequestAt = Date.now()
+			return get(account).getJancode('cf_api_jancode', jancode)
+		})
+		this.apiJancodeQueue = request.then(() => undefined, () => undefined)
+		return request
+	}
+	/**
+	 * yahooAPIから名称から不要単語を置換
+	 * @param {*} name 
+	 */
+	static replaceName(name){
+		const removeWords = [
+			'「プラモデル」',
+			'「同梱不可」',
+			'爆買',
+			'返品種別B',
+			'《発売済・在庫品》',
+			'[BANDAI SPIRITS]',
+			'《在庫切れ》',
+			'送料無料',
+			'（再販）',
+			'(プラモデル)',
+		]
+		return removeWords.reduce((result, word) => result.replaceAll(word, ''), String(name ?? ''))
+			.replace(/\s+/g, ' ')
+			.trim()
+	}
+	/**
+	 * JANコードから商品名取得
+	 */
+	static async getProductName(jancode){
+		let name=''
+		//DB(products)からデータ取得
+		const dbResult = await get(account).getDb('products',{where:`jancode=${jancode}`})
+		if(dbResult.ok){
+			if(dbResult.data.length>0){
+				name = dbResult.data[0].name
+			}
+		}
+		//APIからproductsデータを取得
+		if(name==''){
+			const apiResult = await ProductsClass.getApiJancode(jancode)
+			name = apiResult[0].name
+		}
+		return ProductsClass.replaceName(name)
 	}
 }

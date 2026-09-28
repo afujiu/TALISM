@@ -21,7 +21,8 @@
 	 */
 	let { value = $bindable(null), type = 'text',list=[], placeholder='',exclass='',datalistId='input-datalist',
 		min=null,max=null,step=null,
-		readonly=false
+		readonly=false,
+
 	} = $props()
 
 	onMount(() => {
@@ -71,7 +72,7 @@
 {#if type=='number'}
 	<div class="number-input">
 		<button type="button" class="number-button" onclick={() => changeNumber(-1)} disabled={readonly}>-</button>
-		<input type="number" bind:value={value} onchange={handleChange} min={min} max={max} step={step} placeholder={placeholder} class={exclass} {readonly}/>
+		<input class={`number-disabled-counter ${exclass}`} type="number" bind:value={value} onchange={handleChange} min={min} max={max} step={step} placeholder={placeholder} {readonly}/>
 		<button type="button" class="number-button" onclick={() => changeNumber(1)} disabled={readonly}>+</button>
 	</div>
 {:else if type=='datalist'}
@@ -124,6 +125,17 @@
 	}
 	.number-input input{
 		min-width: 0;
+	}
+	/**input type="number"で添え付けの上下ボタンを無効化する(通常+webkit)**/
+	.number-disabled-counter{
+		-moz-appearance: textfield;
+		appearance: textfield;
+	}
+	.number-disabled-counter::-webkit-inner-spin-button,
+	.number-disabled-counter::-webkit-outer-spin-button{
+		-webkit-appearance: none;
+		appearance: none;
+		margin: 0;
 	}
 	@media (max-width: 1024px){
 		.number-input .number-button{

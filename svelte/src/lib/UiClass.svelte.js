@@ -57,6 +57,7 @@ export class UiClass{
 		}
 		return menu
 	}
+
 	/**
 	 * 設定をデータベースから取得してセット
 	 * @param {*} settings 
@@ -69,6 +70,7 @@ export class UiClass{
 		this.mem.settings = settings
 		this.mem.menuList = menuList
 	}
+
 	/**
 	 * ウィンドウサイズをチェック
 	 */
