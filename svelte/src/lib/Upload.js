@@ -138,7 +138,7 @@ export async function uploadImageBase64(){
 		input.type = 'file'
 		const isMobileOrTablet = /Android|iPhone|iPad|iPod|Mobile|Tablet/i.test(navigator.userAgent) ||
 			(navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-		input.accept = isMobileOrTablet ? 'image/*,video/*' : 'image/*'
+		input.accept = 'image/*,video/*'
 		input.onchange = () => resolve(input.files?.[0])
 		input.click()
 	})
