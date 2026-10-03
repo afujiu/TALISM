@@ -280,7 +280,13 @@
 			return {status:true,message:'更新完了'}
 		})
 	}
-
+	/**
+	 * JANコード変更で名前を更新
+	*/
+	async function changeJancode(val){
+		const name = ProductsClass.getProductName(val.jancode)
+		val.name = name
+	}
 	/**
 	 * 詳細に移動
 	 */
@@ -335,26 +341,25 @@
 			<table class="full-width">
 				<thead class="sticky">
 					<tr>
-						<th style="width:6em;">納品元</th>
-						<th style="width:3em;">ページ</th>
-						<th style="width:3em;">No</th>
+						<th style="width:4em;">納品元<br>ページ<br>No</th>
 						<th style="width:8em;">JANコード</th>
 						<th>名前</th>
 						<th style="width:4em;">単価</th>
-						<th style="width:4em;">税込</th>
 						<th style="width:3em;">数量</th>
 					</tr>
 				</thead>
 				<tbody>
 				{#each commonData.oneOrderList as val}
 					<tr>
-						<td>{val.deliverySource}</td>
-						<td>{val.page}</td>
-						<td>{val.no}</td>
-						<td><Input type="number" bind:value={val.jancode}/></td>
+						<td>{val.deliverySource}<br>{val.page}<br>{val.no}</td>
+						<td><Input type="number" bind:value={val.jancode} onchange={async()=>{await changeJancode(val)}}/></td>
 						<td><Input type="text"  bind:value={val.name}/></td>
-						<td><Input type="number" bind:value={val.price}/></td>
-						<td><Input type="number" bind:value={val.taxprice}/></td>
+						<td>
+							<Input type="number" bind:value={val.price} onchange={()=>{
+								val.taxprice = Math.floor(val.price * 1.1)
+							}}/><br>
+							<Input type="number" bind:value={val.taxprice}/>
+						</td>
 						<td><Input type="number" bind:value={val.quantity}/></td>
 					</tr>
 					{/each}

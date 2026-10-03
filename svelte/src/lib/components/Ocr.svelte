@@ -332,8 +332,10 @@
 				extraction.ey > block.y
 			)
 			if(block){
-				extraction.isHit = block
-				block.isHit = extraction
+				if(extraction.text!=''){
+					extraction.isHit = block
+					block.isHit = extraction
+				}
 			}
 		}
 	}
@@ -499,7 +501,7 @@
 				<!--抽出文字-->
 					{#if isEditExtractionText}
 					{#each extractionList as data}
-						<input type="text" class="extraction-text" style="left:{data.sx}px;top:{data.sy}px;color:{data.isHit?'blue':'red'};" bind:value={data.text}>
+						<input type="text" class="extraction-text" style="left:{data.sx}px;top:{data.sy}px;color:{data.isHit?'blue':'red'};" bind:value={data.text} onchange={updateExtractionHits}>
 					{/each}
 					{/if}
 			{/if}
