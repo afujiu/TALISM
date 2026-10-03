@@ -59,6 +59,7 @@
 		if (min !== null && next < Number(min)) next = Number(min)
 		if (max !== null && next > Number(max)) next = Number(max)
 		value = next
+	handleChange(null)
 	}
 
 	/** @param {Event} event */
