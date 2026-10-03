@@ -322,32 +322,36 @@
 	 * 抽出文字の矩形とstructブロックの交差状態を更新する
 	 */
 	function updateExtractionHits(){
-		for(const extraction of extractionList) extraction.isHit = null
-		for(const block of realStruct) block.isHit = null
+		try{
+			for(const extraction of extractionList) extraction.isHit = null
+			for(const block of realStruct) block.isHit = null
 
-		for(const extraction of extractionList){
-			const block = realStruct.find((block) =>
-				extraction.sx < block.x + block.width &&
-				extraction.ex > block.x &&
-				extraction.sy < block.y + block.height &&
-				extraction.ey > block.y
-			)
-			if(block){
-				if(extraction.text!=''){
-					let text = String(extraction.text ?? '').trim()
-					if(block.type === 'number'){
-						text = text.replaceAll(',', '')
-						text = text.replaceAll(' ', '')
-						text = text.replaceAll('　', '')
-						extraction.text = text
+			for(const extraction of extractionList){
+				const block = realStruct.find((block) =>
+					extraction.sx < block.x + block.width &&
+					extraction.ex > block.x &&
+					extraction.sy < block.y + block.height &&
+					extraction.ey > block.y
+				)
+				if(block){
+					if(extraction.text!=''){
+						let text = String(extraction.text ?? '').trim()
+						if(block.type === 'number'){
+							text = text.replaceAll(',', '')
+							text = text.replaceAll(' ', '')
+							text = text.replaceAll('　', '')
+							extraction.text = text
+						}
+						if(block.type === 'number' && (text === '' || !Number.isFinite(Number(text)))){
+							continue
+						}
+						extraction.isHit = block
+						block.isHit = extraction
 					}
-					if(block.type === 'number' && (text === '' || !Number.isFinite(Number(text)))){
-						continue
-					}
-					extraction.isHit = block
-					block.isHit = extraction
 				}
 			}
+		}catch(e){
+			alert(e.message)
 		}
 	}
 
@@ -542,7 +546,7 @@
 					</span>
 					<span class="f1"><button class="btn" onclick={()=>{if(scale==1){scale=0.5}else{scale=1}}}>拡大</button></span>
 					<span class="f1"><button class="btn" onclick={()=>{addExtractionList()}}>不足追加</button></span>
-					<span class="f1"><button class="btn confirm-btn" onclick={async()=>{await confirm()}}>抽出</button></span>
+					<span class="f1"><button class="btn confirm-btn" onclick={async()=>{await confirm()}}>確定</button></span>
 				{/if}
 				</div>
 			</Loading>
