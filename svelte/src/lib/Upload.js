@@ -136,29 +136,69 @@ export async function uploadImageBase64(){
 
 		const input = document.createElement('input')
 		input.type = 'file'
-		input.accept = 'image/*'
+		const isMobileOrTablet = /Android|iPhone|iPad|iPod|Mobile|Tablet/i.test(navigator.userAgent) ||
+			(navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+		input.accept = isMobileOrTablet ? 'image/*,video/*' : 'image/*'
 		input.onchange = () => resolve(input.files?.[0])
 		input.click()
 	})
 	if (!(selectedFile instanceof File)) {
 		throw new TypeError('画像ファイルを指定してください')
 	}
-	if (!selectedFile.type.startsWith('image/')) {
-		throw new TypeError('画像ファイルを指定してください')
+	/** @type {string} */
+	let src
+	let imageSize
+	if (selectedFile.type.startsWith('image/')) {
+		src = await new Promise((resolve, reject) => {
+			const reader = new FileReader()
+			reader.onload = () => {
+				if (typeof reader.result === 'string') resolve(reader.result)
+				else reject(new Error('画像の読み込みに失敗しました'))
+			}
+			reader.onerror = () => reject(reader.error ?? new Error('画像の読み込みに失敗しました'))
+			reader.readAsDataURL(selectedFile)
+		})
+		imageSize = await new Promise((resolve, reject) => {
+			const image = new Image()
+			image.onload = () => resolve({width: image.naturalWidth, height: image.naturalHeight})
+			image.onerror = () => reject(new Error('画像サイズの取得に失敗しました'))
+			image.src = String(src)
+		})
+	} else if (selectedFile.type.startsWith('video/')) {
+		const videoUrl = URL.createObjectURL(selectedFile)
+		try {
+			const frame = await new Promise((resolve, reject) => {
+				const video = document.createElement('video')
+				video.preload = 'metadata'
+				video.muted = true
+				video.playsInline = true
+				video.onloadeddata = () => {
+					const canvas = document.createElement('canvas')
+					canvas.width = video.videoWidth
+					canvas.height = video.videoHeight
+					const context = canvas.getContext('2d')
+					if (!context) {
+						reject(new Error('Canvas 2Dコンテキスト取得失敗'))
+						return
+					}
+					context.drawImage(video, 0, 0, canvas.width, canvas.height)
+					resolve({
+						src: canvas.toDataURL('image/jpeg', 0.9),
+						width: canvas.width,
+						height: canvas.height,
+					})
+				}
+				video.onerror = () => reject(new Error('動画の読み込みに失敗しました'))
+				video.src = videoUrl
+			})
+			src = frame.src
+			imageSize = {width: frame.width, height: frame.height}
+		} finally {
+			URL.revokeObjectURL(videoUrl)
+		}
+	} else {
+		throw new TypeError('画像または動画ファイルを指定してください')
 	}
-
-	const src = await new Promise((resolve, reject) => {
-		const reader = new FileReader()
-		reader.onload = () => resolve(reader.result)
-		reader.onerror = () => reject(reader.error ?? new Error('画像の読み込みに失敗しました'))
-		reader.readAsDataURL(selectedFile)
-	})
-	const imageSize = await new Promise((resolve, reject) => {
-		const image = new Image()
-		image.onload = () => resolve({width: image.naturalWidth, height: image.naturalHeight})
-		image.onerror = () => reject(new Error('画像サイズの取得に失敗しました'))
-		image.src = String(src)
-	})
 
 	return {
 		name: selectedFile.name,
