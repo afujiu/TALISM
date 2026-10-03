@@ -49,7 +49,7 @@
 	*/
 	onMount(async () => {
 		isLoading = true
-		// キャッシュn
+		// キャッシュ
 		if($account.getMemory('ocr')==null){
 			const ocr = await PaddleOCR.create({
 			lang: "japan",
@@ -146,6 +146,7 @@
 			})
 		}
 	}
+
 	/**
 	 * 納品書画像を取得する
 	 * @param base64
@@ -297,27 +298,30 @@
 	 * 文字抽出
 	 */
 	async function extraction(){
-		
-		extractionState='画像変換'
-		const ocr = $account.getMemory('ocr')
-		const base64 = imageBase64
-		const img = await MediaClass.base64ToImage(base64)
-		extractionState='文字抽出中'
-		const [result] = await ocr.predict(img,{textDetUnclipRatio: 1.5})
-		extractionList=[]
-		for(let item of result.items){
-			extractionList.push({
-				sx:item.poly[0][0],
-				sy:item.poly[0][1],
-				ex:item.poly[1][0],
-				ey:item.poly[1][1],
-				text:item.text,
-				poly:item.poly,
-				isHit:null,
-			})
+		try{
+			extractionState='画像変換'
+			const ocr = $account.getMemory('ocr')
+			const base64 = imageBase64
+			const img = await MediaClass.base64ToImage(base64)
+			extractionState='文字抽出中'
+			const [result] = await ocr.predict(img,{textDetUnclipRatio: 1.5})
+			extractionList=[]
+			for(let item of result.items){
+				extractionList.push({
+					sx:item.poly[0][0],
+					sy:item.poly[0][1],
+					ex:item.poly[1][0],
+					ey:item.poly[1][1],
+					text:item.text,
+					poly:item.poly,
+					isHit:null,
+				})
+			}
+			updateExtractionHits()
+			extractionState='抽出完了'
+		}catch(e){
+			alert(e.message)
 		}
-		updateExtractionHits()
-		extractionState='抽出完了'
 	}
 
 	/**
