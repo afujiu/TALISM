@@ -159,7 +159,6 @@
 
   /** @param {any} data */
   async function handleSignal(data) {
-    console.log("signal:", data)
 
     // 自分宛てではない
     if (data.to && data.to !== myId) {
@@ -248,8 +247,6 @@
       return
     }
 
-    console.log("PeerConnection作成:", viewerId)
-
     const currentStream = stream
     if (!currentStream) return
 
@@ -284,7 +281,6 @@
     // ------------------------------------
 
     pc.onconnectionstatechange = () => {
-      console.log(viewerId, "connection:", pc.connectionState)
 
       if (pc.connectionState === "connected") {
         viewerConnected = true

@@ -44,7 +44,7 @@
 	onMount(async () => {
 		isLoading = true
 		// キャッシュn
-		if($account.getCache('ocr')==null){
+		if($account.getMemory('ocr')==null){
 			const ocr = await PaddleOCR.create({
 			lang: "japan",
 			ocrVersion: "PP-OCRv5",
@@ -55,7 +55,7 @@
 				simd: true,
 				}
 		})
-			$account.addCache('ocr',ocr)
+			$account.addMemory('ocr',ocr)
 		}
 		stopImageCamera()
 		isLoading=false
@@ -259,7 +259,7 @@
 	 */
 	async function extraction(){
 		extractionState='画像変換'
-		const ocr = $account.getCache('ocr')
+		const ocr = $account.getMemory('ocr')
 		const base64 = imageBase64
 		const img = await MediaClass.base64ToImage(base64)
 		extractionState='文字抽出中'

@@ -12,11 +12,8 @@ export class AccountClass{
 			stateLogin:'SIGNED_OUT',
 			settings:{},
 		}
-		this.cache={}
+		this.memory={}
 	}
-
-
-
 	/**
 	 * 設定をlocalstorageから取得
 	 */
@@ -88,7 +85,6 @@ export class AccountClass{
 		return new Promise(()=>{
 			this.authSubscription = supabase.auth.onAuthStateChange((event, session) => {
 					this.mem.stateLogin=event
-					console.log(event)
 					if (event === 'SIGNED_OUT' || !session) {
 							logoutAction()
 					}
@@ -240,12 +236,12 @@ export class AccountClass{
 
 		if (orderBy) {
 			if (typeof orderBy === 'string') {
-				query = query.order(orderBy, { ascending: true })
+				query = query.order(orderBy, { asc: true })
 			} else if (Array.isArray(orderBy)) {
 				for (const order of orderBy) {
 					if (order?.column) {
 						query = query.order(order.column, {
-							ascending: order.ascending !== false
+							ascending: order.asc !== false
 						})
 					}
 				}
@@ -475,7 +471,6 @@ export class AccountClass{
 			if (!res.ok) {
 				const body = await res.text()
 				const err = (body && body.error) ? body.error : res.statusText || 'Request failed'
-				console.log(err)
 				return null
 			}
 			const arrayBuffer = await res.arrayBuffer()
@@ -605,12 +600,52 @@ export class AccountClass{
 	}
 // #endregion
 
-// #region *************キャッシュ処理*******************
-	addCache(key,data){
-		this.cache[key] = data
+// #region *************メモリ処理*******************
+	addMemory(key,data){
+		this.memory[key] = data
 	}
-	getCache(key){
-		return this.cache[key]
+	getMemory(key){
+		return this.memory[key]
 	}
 // #endregion
+
+
+// #region *************ローカルストレージ処理*******************
+/** */	
+setLs(key, data) {
+		const value = {
+			data: data,
+			timestamp: Date.now()
+		};
+		localStorage.setItem(key, JSON.stringify(value))
+	}
+
+	/**
+	 * ローカルストレージ取得
+	 * @param {*} key 
+	 * @param {*} lifespan ミリ秒　(24 * 60 * 60 * 1000)
+	 * @returns 
+	 */
+	getLs(key,lifespan=null) {
+		const value = localStorage.getItem(key)
+		if (!value) {
+				return null
+		}
+		const cache = JSON.parse(value)
+		// 24時間
+		if(lifespan!=null){
+			if (Date.now() - cache.timestamp >= lifespan) {
+					localStorage.removeItem(key)
+					return null
+			}
+		}
+		return cache.data
+	}
+	/**
+	 * ローカルストレージ削除
+	 * @param {*} key 
+	 */
+	removeLs(key){
+		localStorage.removeItem(key)
+	}
 }

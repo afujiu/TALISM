@@ -22,7 +22,7 @@ export class UiClass{
 		if(path=='account'){
 			return 'アカウント設定'
 		}
-		const menu=this.mem.menuList.find(v=>v.key == path)
+		const menu=this.mem.menuList.find(v=>{return path.includes(v.key)})
 		if(menu==undefined){
 			return null
 		}

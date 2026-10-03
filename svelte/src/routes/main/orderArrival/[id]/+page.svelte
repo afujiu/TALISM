@@ -4,7 +4,7 @@
 <script>
 	import { onMount, onDestroy } from 'svelte'
 	import { account,ui } from '$lib/store'
-
+  import { goto } from '$app/navigation'
 	import { page } from '$app/state'
 	import { ProductsClass } from '$lib/ProductsClass.js'
 	import { speak } from '$lib/Sound.js'
@@ -24,6 +24,7 @@
 	let selectedId = $state(null)
 	let jancode = $state(null)
 	let selectedOrder = $state(null)
+
 	let orderData = $state({
 		isOpen:false,
 		commons:null,
@@ -33,7 +34,6 @@
 			const result = await $account.getDb('common',{where:`id='${id}' and type='orderList'`})
 			if(result.ok){
 				orderData.commons = result.data[0]
-				console.log(orderData.commons)
 				const list = orderData.commons.detail.productsList
 				
 				orderData.list = list
@@ -45,13 +45,13 @@
 			}
 		}
 	})
-	const products = new ProductsClass()
-	
 	onMount(async() => {
-		selectedId = page.url.searchParams.get('id')
+		selectedId = page.params.id
 		await orderData.get(selectedId)
 		isLoading=false
-		
+		setTimeout(()=>{
+			focusElement?.focus()
+		},50)
 	})
 	/**
 	 * バーコードスキャン
@@ -69,6 +69,7 @@
 		//フォーカスをid="barcodeCheck"に戻すinput?.focus();
 		focusElement?.focus()
 	}
+
 	/**
 	 * 登録
 	 */
@@ -77,7 +78,22 @@
 			return
 		}
 		$ui.addNotification(`${$ui.selectedMenuName} 検品情報の更新`,async()=>{
+			const overview = orderData.commons.overview
+			let checkedProductsCount=0
+			for(const val of orderData.list){
+				if(val.quantity == val.realQuantity){
+					checkedProductsCount++
+				}
+			}
+			overview.checkedProductsCount = checkedProductsCount
+			if(overview.checkedProductsCount==overview.count){
+				overview.state = '確認済'
+			}else{
+				overview.state = '確認中'
+			}
 			$account.upsertDb('common',orderData.commons,'id')
+
+			await ProductsClass.updateProductsQuantity(orderData.list)
 			return {status:true,message:'更新完了'}
 		})
 	}
@@ -85,7 +101,7 @@
 	<Loading {isLoading}>
 	<article>
 		<div class="scan-block">
-			<input bind:this={focusElement} type="number" bind:value={jancode} onchange={(e)=>{scanBarcode()}}>
+			<input bind:this={focusElement} type="number" class="hidden-outer" bind:value={jancode} onchange={(e)=>{scanBarcode()}}>
 			{#if selectedOrder!=null}
 				<div>{selectedOrder.jancode}</div>
 				<div>{selectedOrder.name}</div>
@@ -110,7 +126,7 @@
 					<tr class="{(val.realQuantity == val.quantity)?'checked-line':''} {selectedOrder?.jancode==val.jancode?'selected-line':''}">
 						<td>
 							<div>{val.jancode}</div>
-							<div class="line-break">{val.name}</div>
+							<div class="break-word">{val.name}</div>
 						</td>
 						<td class="align-right">
 							<div><Format type="yen" value={val.price}/></div>
@@ -127,16 +143,15 @@
 		</div>
 		<Fab>
 			<span class="f1">
+				<button class="btn reset-btn" onclick={async()=>{await goto(`/main/orderArrival/`)}}>戻る</button>
+			</span>
+			<span class="f1">
 				<button class="btn confirm-btn" onclick={async()=>{await confirm()}}>登録</button>
 			</span>
 		</Fab>
 	</article>
 	</Loading>
 <style>
-	.line-break{
-		white-space: normal;
-    overflow-wrap: anywhere;
-	}
 	.checked-line{
 		opacity:0.5;
 		background:gray;
