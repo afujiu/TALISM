@@ -20,7 +20,7 @@
 	 * readonly: true or false
 	 */
 	let { value = $bindable(null), type = 'text',list=[], placeholder='',exclass='',datalistId='input-datalist',
-		min=null,max=null,step=null,
+		min=null,max=null,step=null,isStep=true,
 		readonly=false,
 
 	} = $props()
@@ -72,9 +72,13 @@
 </script>
 {#if type=='number'}
 	<div class="number-input">
-		<button type="button" class="number-button" onclick={() => changeNumber(-1)} disabled={readonly}>-</button>
+		{#if isStep}
+			<button type="button" class="number-button" onclick={() => changeNumber(-1)} disabled={readonly}>-</button>
+		{/if}
 		<input class={`number-disabled-counter ${exclass}`} type="number" bind:value={value} onchange={handleChange} min={min} max={max} step={step} placeholder={placeholder} {readonly}/>
-		<button type="button" class="number-button" onclick={() => changeNumber(1)} disabled={readonly}>+</button>
+		{#if isStep}
+			<button type="button" class="number-button" onclick={() => changeNumber(1)} disabled={readonly}>+</button>
+		{/if}
 	</div>
 {:else if type=='datalist'}
 	<input type="text" bind:value={value} onchange={handleChange} list={datalistId} placeholder={placeholder} class={exclass} {readonly}/>

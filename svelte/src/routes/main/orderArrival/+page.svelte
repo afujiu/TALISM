@@ -271,11 +271,6 @@
 					}
 				},'id')
 			}
-			setTimeout(async() => {
-				await commonData.get()
-				mode=0
-				isLoading=false
-			}, 1000)
 			
 			return {status:true,message:'更新完了'}
 		})
@@ -355,18 +350,18 @@
 				<tbody>
 				{#each commonData.oneOrderList as val}
 					<tr>
-						<td>{val.deliverySource}<br>{val.page}<br>{val.no}</td>
-						<td><Input type="number" bind:value={val.jancode} on:change={async()=>{await changeJancode(val)}}/></td>
+						<td>{val.deliverySource}<br>P{val.page}<br>No.{val.no}</td>
+						<td><Input type="number" bind:value={val.jancode} on:change={async()=>{await changeJancode(val)}} isStep={false}/></td>
 						<td><Input type="text"  bind:value={val.name}/></td>
 						<td>
 							<div>
-								<Input type="number" bind:value={val.price} on:change={()=>{val.taxprice = Math.floor(val.price * 1.1)}}/>
+								<Input type="number" bind:value={val.price} on:change={()=>{val.taxprice = Math.floor(val.price * 1.1)}} isStep={false}/>
 							</div>
 							<div>
 								<Format type="yen" value={val.taxprice}></Format>
 							</div>
 						</td>
-						<td><Input type="number" bind:value={val.quantity}/></td>
+						<td><Input type="number" bind:value={val.quantity} isStep={false}/></td>
 					</tr>
 					{/each}
 				</tbody>
