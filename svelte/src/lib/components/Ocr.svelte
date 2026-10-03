@@ -22,6 +22,7 @@
 	let imageSize = $state({width:0,height:0})
 	let video = $state(/** @type {HTMLVideoElement|null} */ (null))
 	let stream = $state(/** @type {MediaStream|null} */ (null))
+	let scale = $state(1)
 	// 納品書矩形枠を作成する
 	let scanRect = $state({s:{x:0,y:0},e:{x:0,y:0}})
 	// struct(パーセント座標)から実座標の一覧
@@ -179,7 +180,7 @@
 			const targetY = (block.py/100)*getClippingHeight()+scanRect.s.y
 			const targetW = (block.pw/100)*getClippingWidth()
 			const targetH = (block.ph/100)*getClippingHeight()
-			realStruct.push({id:block.id,x:targetX,y:targetY,width:targetW,height:targetH,isHit:null})
+			realStruct.push({id:block.id,x:targetX,y:targetY,width:targetW,height:targetH,isHit:null,type:block.type})
 		}
 		updateExtractionHits()
 
@@ -333,6 +334,15 @@
 			)
 			if(block){
 				if(extraction.text!=''){
+					let text = String(extraction.text ?? '').trim()
+					if(block.type === 'number'){
+						text = text.replaceAll(',', '')
+						extraction.text = text
+					}
+					if(block.type === 'number' && (text === '' || !Number.isFinite(Number(text)))){
+						continue
+					}
+					console.log(block)
 					extraction.isHit = block
 					block.isHit = extraction
 				}
@@ -430,7 +440,7 @@
 			></video>
 			{/if}
 			<!--納品書画像-->
-			<div class="image-base" style="transform: scale(1);" bind:this={imageBaseElement}>
+			<div class="image-base" style="transform: scale({scale});" bind:this={imageBaseElement}>
 			{#if imageBase64!=null}
 				<img
 					bind:this={imageElement}
@@ -529,6 +539,7 @@
 							{/if}
 						</button>
 					</span>
+					<span class="f1"><button class="btn" onclick={()=>{if(scale==1){scale=0.5}else{scale=1}}}>拡大</button></span>
 					<span class="f1"><button class="btn" onclick={()=>{addExtractionList()}}>不足追加</button></span>
 					<span class="f1"><button class="btn confirm-btn" onclick={async()=>{await confirm()}}>抽出</button></span>
 				{/if}
@@ -557,9 +568,8 @@
     user-select: none;
     -webkit-user-select: none;
     touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
 	}
+	
 	.extraction-text{
 		position:absolute;
 		background:rgba(0,0,0,0);
@@ -574,5 +584,7 @@
 		width:100%;
 		height:100%;
 		overflow:auto;
+		-webkit-overflow-scrolling:touch;
+		overscroll-behavior:contain;
 	}
 </style>
