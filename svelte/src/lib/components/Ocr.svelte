@@ -337,12 +337,13 @@
 					let text = String(extraction.text ?? '').trim()
 					if(block.type === 'number'){
 						text = text.replaceAll(',', '')
+						text = text.replaceAll(' ', '')
+						text = text.replaceAll('　', '')
 						extraction.text = text
 					}
 					if(block.type === 'number' && (text === '' || !Number.isFinite(Number(text)))){
 						continue
 					}
-					console.log(block)
 					extraction.isHit = block
 					block.isHit = extraction
 				}
