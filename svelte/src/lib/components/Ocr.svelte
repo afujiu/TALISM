@@ -174,16 +174,17 @@
 	 * スキャン範囲が変わった時、realStructを変更する
 	 */
 	function resizeScanRect(){
-		realStruct=[]
-		for(const block of struct){
-			const targetX = (block.px/100)*getClippingWidth()+scanRect.s.x
-			const targetY = (block.py/100)*getClippingHeight()+scanRect.s.y
-			const targetW = (block.pw/100)*getClippingWidth()
-			const targetH = (block.ph/100)*getClippingHeight()
-			realStruct.push({id:block.id,x:targetX,y:targetY,width:targetW,height:targetH,isHit:null,type:block.type})
-		}
-		updateExtractionHits()
-
+		try{
+			realStruct=[]
+			for(const block of struct){
+				const targetX = (block.px/100)*getClippingWidth()+scanRect.s.x
+				const targetY = (block.py/100)*getClippingHeight()+scanRect.s.y
+				const targetW = (block.pw/100)*getClippingWidth()
+				const targetH = (block.ph/100)*getClippingHeight()
+				realStruct.push({id:block.id,x:targetX,y:targetY,width:targetW,height:targetH,isHit:null,type:block.type})
+			}
+			updateExtractionHits()
+		}catch(e){alert(e.message)}
 	}
 
 	function getClippingWidth(){
@@ -296,6 +297,7 @@
 	 * 文字抽出
 	 */
 	async function extraction(){
+		
 		extractionState='画像変換'
 		const ocr = $account.getMemory('ocr')
 		const base64 = imageBase64
@@ -338,6 +340,7 @@
 						let text = String(extraction.text ?? '').trim()
 						if(block.type === 'number'){
 							text = text.replaceAll(',', '')
+							text = text.replaceAll('.', '')
 							text = text.replaceAll(' ', '')
 							text = text.replaceAll('　', '')
 							extraction.text = text
@@ -381,38 +384,42 @@
 	 * 確定
 	 */
 	function confirm(){
-		let rowsList={}
-		for(const i in realStruct){
-			const block =realStruct[i]
-			if(block.isHit==null){
-				continue
+		try{
+			let rowsList={}
+			for(const i in realStruct){
+				const block =realStruct[i]
+				if(block.isHit==null){
+					continue
+				}
+				const extraction = block.isHit
+				if(extraction.text==''){
+					continue
+				}
+				let [key, idx] = block.id.split('_')
+				if(rowsList[idx]==null){
+					rowsList[idx]=[]
+				}
+				rowsList[idx].push({key:key,text:extraction.text})
 			}
-			const extraction = block.isHit
-			if(extraction.text==''){
-				continue
+			rowsList = Object.fromEntries(
+				Object.entries(rowsList).sort(([left], [right]) => Number(left) - Number(right))
+			)
+			const resultList=[]
+			for(let i in rowsList){
+				const data = rowsList[i]
+				const oneRow={}
+				for(let oneRowData of data){
+					oneRow[oneRowData.key] = oneRowData.text
+				}
+				resultList.push(oneRow)
 			}
-			let [key, idx] = block.id.split('_')
-			if(rowsList[idx]==null){
-				rowsList[idx]=[]
-			}
-			rowsList[idx].push({key:key,text:extraction.text})
+			isPopup=false
+			stopImageCamera()
+			imageBase64=null
+			dispatch('extraction',resultList)
+		}catch(e){
+			alert(e.message)
 		}
-		rowsList = Object.fromEntries(
-			Object.entries(rowsList).sort(([left], [right]) => Number(left) - Number(right))
-		)
-		const resultList=[]
-		for(let i in rowsList){
-			const data = rowsList[i]
-			const oneRow={}
-			for(let oneRowData of data){
-				oneRow[oneRowData.key] = oneRowData.text
-			}
-			resultList.push(oneRow)
-		}
-		isPopup=false
-		stopImageCamera()
-		imageBase64=null
-		dispatch('extraction',resultList)
 	}
 	/**
 	 *　ポップアップを閉じて初期化する
@@ -462,9 +469,9 @@
 						y={block.y}
 						width={block.width}
 						height={block.height}
-						fill="rgba(255,0,0,0.0)"
+						fill="rgba(0,0,0,0.0)"
 						stroke={block.isHit?'blue':'red'}
-						stroke-width="2"
+						stroke-width="3"
 					/>
 				{/each}
 					<rect
@@ -475,7 +482,7 @@
 						height={scanRect.e.y - scanRect.s.y}
 						stroke-width="1"
 						stroke="blue"
-						fill="rgba(255,0,0,0.1)"
+						fill="rgba(0,0,0,0)"
 					></rect>
 					<!--開始-->
 					<rect
@@ -516,7 +523,14 @@
 				<!--抽出文字-->
 					{#if isEditExtractionText}
 					{#each extractionList as data}
-						<input type="text" class="extraction-text" style="left:{data.sx}px;top:{data.sy}px;color:{data.isHit?'blue':'red'};" bind:value={data.text} onchange={updateExtractionHits}>
+						<input type="text"
+							class="extraction-text"
+							style="
+							left:{data.sx}px;
+							top:{data.sy}px;
+							color:{data.isHit?'blue':'red'};
+							width:{data.text.length}em;"
+							bind:value={data.text} onchange={updateExtractionHits}>
 					{/each}
 					{/if}
 			{/if}
@@ -577,11 +591,11 @@
 	
 	.extraction-text{
 		position:absolute;
-		background:rgba(0,0,0,0);
-		border:none;
-		border-bottom:solid 1px;
+		background:rgba(255,0,0,0.2);
+		border:solid 1px;
 		border-color:black;
-		font-size:15px;
+		min-width:1em;
+		font-size:20px;
 		color:red;
 	}
 	.image-base{
