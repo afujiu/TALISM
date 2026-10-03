@@ -285,15 +285,15 @@
 	 * 詳細に移動
 	 */
 	async function gotoEntry(id){
-		await goto(`/main/orderEntry?id=${id}`)
+		await goto(`/main/orderArrival/${id}`)
 	}
 </script>
 	<Loading {isLoading}>
 	<article>
-		<!--履歴一覧-->
+		<!--納品書一覧-->
 		{#if mode==0}
 		<div>
-			履歴一覧
+			納品書一覧
 			<Loading isLoading={commonData.list.length==0}>
 			<table class="full-width">
 				<thead class="sticky">
@@ -400,11 +400,11 @@
 				<div>{commonData.commonPage+1}/{Math.ceil(commonData.totalCount/MAX_ONE_PAGE_ROW)}</div>
 				<div><Format type="number" value={commonData.totalCount}></Format>件</div>
 			</span>
-			<span class="f1"><button class="btn confirm-btn" onclick={()=>{commonData.initOrder();mode=1;}}>新規登録</button></span>
+			<span class="f1"><button class="btn confirm-btn" onclick={()=>{commonData.initOrder();mode=1;}}>納品書スキャン</button></span>
 		{:else if mode==1}
 		<!--登録-->
 			<span class="f1">
-				<button class="btn reset-btn" onclick={()=>{mode=0}}>履歴一覧</button>
+				<button class="btn reset-btn" onclick={()=>{mode=0}}>戻る</button>
 			</span>
 			<span class="f1">
 				<Input

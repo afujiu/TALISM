@@ -8,7 +8,6 @@
 
 	let val=$state('')
 	onMount(async () => {
-		//console.log(await $account.getDb('settingss'))
 	})
 </script>
 <article>

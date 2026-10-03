@@ -30,6 +30,7 @@
 		"@ffmpeg/util": "^0.12.2",
 		"@paddleocr/paddleocr-js": "^0.4.2",
 		"@supabase/supabase-js": "^2.53.0",
+		"dexie": "^4.4.6",
 		"onnxruntime-web": "^1.27.0",
 		"potrace": "^2.1.8",
 		"tesseract.js": "^7.0.0"

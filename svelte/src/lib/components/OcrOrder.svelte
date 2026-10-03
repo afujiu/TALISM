@@ -26,7 +26,6 @@
 		switch(mode){
 			//初期化
 			case 0:
-				console.log('0')
 				befPos={x:0,y:0}
 				imageUrl=''
 				img=''
