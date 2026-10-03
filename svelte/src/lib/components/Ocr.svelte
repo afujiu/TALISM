@@ -16,6 +16,7 @@
 
 	let {title='OCR',struct =[],isPopup=$bindable(false)} = $props()
 	let imageElement = $state(/** @type {HTMLImageElement|null} */ (null))
+	let imageBaseElement = $state(/** @type {HTMLDivElement|null} */ (null))
 	let imageBase64 = $state(/** @type {string|null} */ (null))
 	let showImageBase64 = $state(/** @type {string|null} */ (null))
 	let imageSize = $state({width:0,height:0})
@@ -28,6 +29,10 @@
 	// 選択した矩形範囲編集用の座標オブジェクト格納(未選択:null,開始:s,終了:e)
 	let selectRect = $state(null)
 	const befPos = $state({x:0,y:0})
+	/** @type {Map<number, {x:number, y:number}>} */
+	let activeTouchPointers = new Map()
+	/** @type {{x:number, y:number}|null} */
+	let lastTouchCenter = null
 
 	let isLoading = $state(true)
 	// 抽出した文字列の座標込み一覧{sx,sy,ex,dy,text,poly,isHit}
@@ -195,6 +200,13 @@
 	function downScanRange(e){
 		selectRect=null
 		e.currentTarget.setPointerCapture(e.pointerId)
+		if(e.pointerType === 'touch'){
+			activeTouchPointers.set(e.pointerId, {x:e.clientX, y:e.clientY})
+			if(activeTouchPointers.size >= 2){
+				lastTouchCenter = getTouchCenter()
+				return
+			}
+		}
     const rect = e.currentTarget.getBoundingClientRect()
 		const x = Math.round(e.clientX - rect.left)
 		const y = Math.round(e.clientY - rect.top)
@@ -214,6 +226,19 @@
 	 * @param e
 	 */
 	function moveScanRange(e){
+		if(e.pointerType === 'touch' && activeTouchPointers.has(e.pointerId)){
+			activeTouchPointers.set(e.pointerId, {x:e.clientX, y:e.clientY})
+			if(activeTouchPointers.size >= 2){
+				e.preventDefault()
+				const center = getTouchCenter()
+				if(lastTouchCenter && imageBaseElement){
+					imageBaseElement.scrollLeft -= center.x - lastTouchCenter.x
+					imageBaseElement.scrollTop -= center.y - lastTouchCenter.y
+				}
+				lastTouchCenter = center
+				return
+			}
+		}
 		if(selectRect==null){
 			return
 		}
@@ -248,7 +273,19 @@
 	 * @param e
 	 */
 	function upScanRange(e){
+		if(e.pointerType === 'touch'){
+			activeTouchPointers.delete(e.pointerId)
+			lastTouchCenter = activeTouchPointers.size >= 2 ? getTouchCenter() : null
+		}
 		selectRect=null
+	}
+
+	function getTouchCenter(){
+		const points = [...activeTouchPointers.values()]
+		return points.reduce((center, point) => ({
+			x:center.x + point.x / points.length,
+			y:center.y + point.y / points.length,
+		}), {x:0, y:0})
 	}
 //#endregion
 
@@ -391,7 +428,7 @@
 			></video>
 			{/if}
 			<!--納品書画像-->
-			<div class="image-base" style="transform: scale(1);">
+			<div class="image-base" style="transform: scale(1);" bind:this={imageBaseElement}>
 			{#if imageBase64!=null}
 				<img
 					bind:this={imageElement}
@@ -452,9 +489,12 @@
 					{/if}
 				<!-- タッチ範囲-->
 				<div class="surface" style="width:{imageSize.width}px;height:{imageSize.height}px;"
+					role="group"
+					aria-label="画像範囲操作"
 					onpointerdown={(e)=>{downScanRange(e)}} 
 					onpointermove={(e)=>{moveScanRange(e)}}
 					onpointerup={(e)=>{upScanRange(e)}}
+					onpointercancel={(e)=>{upScanRange(e)}}
 				></div>
 				<!--抽出文字-->
 					{#if isEditExtractionText}
@@ -531,7 +571,6 @@
 		position:relative;
 		width:100%;
 		height:100%;
-		padding:1em;
 		overflow:auto;
 	}
 </style>
