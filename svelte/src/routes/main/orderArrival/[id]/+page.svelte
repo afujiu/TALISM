@@ -99,9 +99,9 @@
 		if(window.confirm("一致字保存しますか")==false){
 			return
 		}
-		$ui.addNotification(`${$ui.selectedMenuName} 検品情報の更新`,async()=>{
+		$ui.addNotification(`${$ui.selectedMenuName} 検品情報の一致字保存`,async()=>{
 			await saveCommon()
-			return {status:true,message:'更新完了'}
+			return {status:true,message:'保存完了'}
 		})
 	}
 	/**
@@ -122,7 +122,7 @@
 	<Loading {isLoading}>
 	<article>
 		<div class="scan-block">
-			<input bind:this={focusElement} type="number" class="hidden-outer" bind:value={jancode} onchange={(e)=>{scanBarcode()}}>
+			<input bind:this={focusElement} type="number" placeholder="スキャン" bind:value={jancode} onchange={(e)=>{scanBarcode()}}>
 			{#if selectedOrder!=null}
 				<div>{selectedOrder.jancode}</div>
 				<div>{selectedOrder.name}</div>
