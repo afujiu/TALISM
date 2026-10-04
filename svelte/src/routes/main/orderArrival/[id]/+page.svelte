@@ -71,29 +71,50 @@
 	}
 
 	/**
+	 * 納品書情報の保存
+	*/
+	async function saveCommon(isComplate){
+		const overview = orderData.commons.overview
+		let checkedProductsCount=0
+		for(const val of orderData.list){
+			if(val.quantity == val.realQuantity){
+				checkedProductsCount++
+			}
+		}
+		overview.checkedProductsCount = checkedProductsCount
+		if(overview.checkedProductsCount==overview.count){
+			overview.state = '確認済'
+		}else{
+			overview.state = '確認中'
+		}
+		if(isComplate){
+			overview.state = '在庫反映済'
+		}
+		$account.upsertDb('common',orderData.commons,'id')
+	}
+	/**
+	 * 一時保存
+	*/
+	async function save(){
+		if(window.confirm("一致字保存しますか")==false){
+			return
+		}
+		$ui.addNotification(`${$ui.selectedMenuName} 検品情報の更新`,async()=>{
+			await saveCommon()
+			return {status:true,message:'更新完了'}
+		})
+	}
+	/**
 	 * 登録
 	 */
 	async function confirm(){
 		if(window.confirm("更新しますか")==false){
 			return
 		}
-		$ui.addNotification(`${$ui.selectedMenuName} 検品情報の更新`,async()=>{
-			const overview = orderData.commons.overview
-			let checkedProductsCount=0
-			for(const val of orderData.list){
-				if(val.quantity == val.realQuantity){
-					checkedProductsCount++
-				}
-			}
-			overview.checkedProductsCount = checkedProductsCount
-			if(overview.checkedProductsCount==overview.count){
-				overview.state = '確認済'
-			}else{
-				overview.state = '確認中'
-			}
-			$account.upsertDb('common',orderData.commons,'id')
-
+		$ui.addNotification(`${$ui.selectedMenuName} 在庫情報の更新`,async()=>{
+			await saveCommon(true)
 			await ProductsClass.updateProductsQuantity(orderData.list)
+			await goto(`/main/orderArrival/`)
 			return {status:true,message:'更新完了'}
 		})
 	}
@@ -109,6 +130,7 @@
 					<div class="f1">単価：<Format type="yen" value={selectedOrder.price}/></div>
 					<div class="f1">税込：<Format type="yen" value={selectedOrder.taxprice}/></div>
 					<div class="f1">数量：<Format type="number" value={selectedOrder.quantity}/></div>
+					<div class="f1">数量：<Format type="number" value={selectedOrder.realQuantity}/></div>
 				</div>
 			{/if}
 		</div>
@@ -146,7 +168,10 @@
 				<button class="btn reset-btn" onclick={async()=>{await goto(`/main/orderArrival/`)}}>戻る</button>
 			</span>
 			<span class="f1">
-				<button class="btn confirm-btn" onclick={async()=>{await confirm()}}>登録</button>
+				<button class="btn" onclick={async()=>{await save()}}>一時保存</button>
+			</span>
+			<span class="f1">
+				<button class="btn confirm-btn" onclick={async()=>{await confirm()}}>確定</button>
 			</span>
 		</Fab>
 	</article>
@@ -161,11 +186,11 @@
 	}
 	.scan-block{
 		width:100%;
-		height:50%;
+		height:20%;
 	}
 	.table-block{
 		width:100%;
-		height:50%;
+		height:80%;
 		overflow:auto;
 	}
 </style>
