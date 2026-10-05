@@ -14,129 +14,109 @@
 	import Loading from '$comp/Loading.svelte'
 	import Icon from '$comp/Icon.svelte'
 	import Format from '$comp/Format.svelte'
-    import Popup from '$lib/components/Popup.svelte'
+  import Popup from '$lib/components/Popup.svelte'
 
   /*******************
    * argument
    */
 
 	let focusElement =$state(null)
-	
 	let isLoading = $state(true)
-	let products = new ProductsClass()
-	let checkedList = $state([])
-	const stockTakingDb = new DexieClass('stocktaking')
 	let jancode = $state(null)
-	let overview=$state({
-		productsCount:0,
-		realProductsCount:0,
-		newProductsCount:0,
+	let productList = $state([])
+	const overview=$state({
+		productCount:0,
+		realProductCount:0,
+		newProductCount:0,
 	})
 	let selectedProducts = $state(null)
+	const stockTakingDb = new DexieClass('stocktaking')
+
 
 	onMount(async() => {
-		await products.initDexie()
 		await stockTakingDb.init(['jancode','name','price','taxprice','quantity'])
-		overview.productsCount = await products.localProducts.count()
-		overview.newProductsCount=0
-		checkedList=await stockTakingDb.getAll()
-		setRealCount()
+		productList = await stockTakingDb.getAll()
+		await setOverview()
 		isLoading = false
 		focus()
 	})
 
-	function setRealCount(){
-		const count = checkedList.filter(v => v.quantity > 0).length
-		overview.realProductsCount=count
-	}
-	/**
-	 * 初期化
-	 */
-	async function init(){
-		await stockTakingDb.deleteStore()
-		const list = []
-		const productsList = await products.localProducts.getAll()
-		for(let val of productsList){
-			list.push({
-					jancode:val.jancode,
-					name:val.name,
-					price:val.price,
-					taxprice:val.taxprice,
-					quantity:0
-				})
-		}
-		await stockTakingDb.put(list)
-		overview.productsCount = await products.localProducts.count()
-		overview.realProductsCount=0
-		overview.newProductsCount=0
-		checkedList=await stockTakingDb.getAll()
-		focus()
+	async function setOverview(){
+		overview.productCount=productList.length
+		const realProductCount = productList.filter(v=>v.quantity!=0).length
+		overview.realProductCount=realProductCount
+		overview.newProductCount=0
 	}
 
 	/**
-	 * 棚卸しデータを取得
-	 * @param jancode
-	 */
-	async function getStockTakingData(jancode){
-		const data = await stockTakingDb.getWhere([{mode:'query',key:'jancode',value:jancode}])
-		if(data.length>0){
-			return data[0]
-		}else{
-			return null
-		}
+	 * データ変更(dexie.jsに更新)
+	*/
+	async function changeProducts(val){
+		productList = [val, ...productList.filter((item) => item.jancode !== val.jancode)]
+		await stockTakingDb.put(productList)
+		await setOverview()
 	}
+	/**
+	 * 初期化
+	 * productsのすべての商品情報の数量=0のデータをローカルに保存
+	 */
+	async function init(){
+		await stockTakingDb.deleteStore()
+		const list=[]
+		const getProductList = await ProductsClass.getProductList()
+		for(const val of getProductList){
+			list.push({
+				jancode:val.jancode,
+				name:val.name,
+				price:val.price,
+				taxprice:val.taxprice,
+				quantity:0,
+				id:val.id
+			})
+		}
+		await stockTakingDb.put(list)
+		productList = await stockTakingDb.getAll()
+		await setOverview()
+		focus()
+	}
+
+
 	/**
 	 * バーコードスキャン
 	 * 既存のDBにない場合は新規登録
 	 */
 	async function scanBarcode(){
-		const start = performance.now()
-		let existProducts={}
 		if(jancode!=''){
-			// ローカルデータからjancodeで名前、単価取得
-			const lsProductList = await products.getProducts(jancode)
-			if(lsProductList.length>0){
-				existProducts = lsProductList[0]
+			let existProduct = productList.find(v=>v.jancode==jancode)
+			if(existProduct!=undefined){
+				existProduct.quantity++
 			}else{
-				// APIorDBから商品情報取得
-				existProducts = await ProductsClass.getProductData(jancode)
-			}
-			// 棚卸しLSから既存jancode取得し、数量を追加
-			let stockTakingData = await getStockTakingData(jancode)
-			//新規棚卸し
-			if(stockTakingData==null){
-				const newData ={
-					jancode:jancode,
-					name:existProducts.name,
-					price:existProducts.price,
-					taxprice:existProducts.taxprice,
-					quantity:1
+				//既存商品マスタにない場合は、APIから取得して新規項目化
+				const result = await ProductsClass.getApiJancode(jancode)
+				if(result.length>0){
+					console.log(result)
+					const newProduct = result[0]
+					existProduct = {
+						jancode:jancode,
+						name:newProduct.name,
+						price:Number(newProduct.price),
+						taxprice:Math.floor(Number(newProduct.price)*1.1),
+						quantity:1,
+						id:null
+					}
+					productList.unshift(existProduct)
 				}
-				stockTakingData = newData
-				checkedList=[newData,...checkedList]
-			}else{
-				//数量追加
-				const idx = checkedList.findIndex(v=>v.jancode==jancode)
-				if(idx!=-1){
-					checkedList[idx].quantity++
-				}
-				stockTakingData.quantity++
 			}
-			
-			stockTakingDb.put([stockTakingData]).then(() => {
-			});
-
-			setRealCount()
 		}
-		jancode=''
-		//フォーカスをid="barcodeCheck"に戻すinput?.focus();
-		focusElement?.focus()
-		console.log(`1: ${performance.now() - start} ms`)
+		focus()
+		await setOverview()
 	}
+
 	function focus(){
+		jancode=''
 		setTimeout(()=>{
 			focusElement?.focus()
-		},50)
+		},10)
 	}
 
 	/**
@@ -150,81 +130,73 @@
 			return {status:true,message:'更新完了'}
 		})
 	}
+
 </script>
 	<Loading {isLoading}>
 	<article>
-		<input bind:this={focusElement} type="number" bind:value={jancode} onchange={async(e)=>{scanBarcode()}}>
-		<!-- 概要データ-->
-		<div class="flex">
-			<span class="f1 align-center">既存商品数:<Format type="number" comma value={overview.productsCount}></Format></span>
-			<span class="f1 align-center">商品実数:<Format type="number" comma value={overview.realProductsCount}></Format></span>
-			<span class="f1 align-center">新商品数:<Format type="number" comma value={overview.newProductsCount}></Format></span>
+		<div class="top-block">
+			<input bind:this={focusElement} type="number" bind:value={jancode} onchange={async(e)=>{scanBarcode()}}>
+			<!-- 概要データ-->
+			<div class="flex">
+				<span class="f1 align-center">既存商品数:<Format type="number" comma value={overview.productCount}></Format></span>
+				<span class="f1 align-center">商品実数:<Format type="number" comma value={overview.realProductCount}></Format></span>
+				<span class="f1 align-center">新商品数:<Format type="number" comma value={overview.newProductCount}></Format></span>
+			</div>
+			<!-- スキャンしたデータ-->
+			<div>
+			
+			</div>
 		</div>
-		<!-- スキャンしたデータ-->
-		<div>
-		
-		</div>
-		<div>
+		<div class="bottom-block">
 			<table class="full-width">
-				<thead>
+				<thead class="sticky">
 					<tr>
-						<th style="width:8em;">JANコード</th>
-						<th >名前</th>
-						<th style="width:5em;">価格</th>
+						<th>JANコード<br>名前</th>
+						<th style="width:4em;">価格</th>
 						<th style="width:3em;">数量</th>
 					</tr>
 				</thead>
 				<tbody>
-				{#each checkedList as item}
-					{#if item.quantity>0}
-						<tr>
-							<td>{item.jancode}</td>
-							<td class="break-word">{item.name}</td>
-							<td style="cursor:pointer;" onclick={()=>{
-								selectedProducts=item
-								if(selectedProducts.price==0){
-									selectedProducts.price=null
-								}
-								if(selectedProducts.taxprice==0){
-									selectedProducts.taxprice=null
-								}
-							}}>
-								<div><Format type="yen" value={item.price}></Format></div>
-								<div><Format type="yen" value={item.taxprice}></Format></div>
-							</td>
-							<td>{item.quantity}</td>
-						</tr>
-						{/if}
-					{/each}
+				{#each productList.slice(0, 100) as val}
+					<tr>
+						<td>
+							<div>{val.jancode}</div>
+							<div class="break-word">{val.name}</div>
+						</td>
+						<td>
+							<div>
+								<Input type="number" isStep={false} bind:value={val.price}/>
+							</div>
+							<div>
+								<Format type="yen" value={val.taxprice}></Format>
+							</div>
+						</td>
+						<td>
+							<Input type="number" isStep={false} bind:value={val.quantity} on:change={async()=>{await changeProducts(val)}}/>
+						</td>
+					</tr>
+				{/each}
 				</tbody>
 			</table>
 		</div>
 		<Fab>
-			<span class="f1">
-				<button class="btn reset-btn" onclick={async()=>{await init()}}>初期化</button>
-			</span>
-			<span class="f1">
-				<button class="btn confirm-btn" onclick={async()=>{await confirm()}}>登録</button>
-			</span>
+			<span class="f1"><button class="btn" onclick={async()=>{await init()}}>初期化</button></span>
+			<span class="f1"><button class="btn confirm-btn">登録</button></span>
 		</Fab>
 	</article>
 	</Loading>
-	<Popup value={selectedProducts!=null}
-		on:close={()=>{
-			focus()
-			selectedProducts=null
-			}
-		}
-	>
-		<span slot="title">価格修正</span>
-		<div class="flex">
-		<span class="f1">価格</span>
-		<span class="f1">
-			<Input type="number" bind:value={selectedProducts.price} on:change={()=>{selectedProducts.taxprice=Math.floor(selectedProducts.price * 1.1)}}></Input>
-		</span>
-		<span class="f1">税込</span>
-		<span class="f1"><Format type="number" comma value={selectedProducts.taxprice}></Format></span>
-		</div>
-	</Popup>
 <style>
+	article{
+		overflow:hidden;
+	}
+	.top-block{
+		width:100%;
+		height:30%;
+		position:relative;
+	}
+	.bottom-block{
+		width:100%;
+		height:60%;
+		overflow:auto;
+	}
 </style>

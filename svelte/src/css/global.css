@@ -223,12 +223,11 @@ button.icon{
 	}
 	
 	tbody tr:nth-child(even):not(.selected){
-		-webkit-filter: brightness(0.99);
-		filter: brightness(0.99);
+		background:rgba(255,255,255,0.2);
 	}
-		tbody tr:nth-child(even):not(.selected) *{
-		-webkit-filter: brightness(0.99);
-		filter: brightness(0.99);
+
+	tbody tr td *{
+		background:transparent;
 	}
 
 	tr.selected{

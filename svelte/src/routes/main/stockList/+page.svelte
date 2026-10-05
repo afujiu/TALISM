@@ -67,6 +67,35 @@
 				}
 			}catch(e){}
 		},
+		//価格更新
+		updatePrice:async()=>{
+			const uploadList = await uploadCsvConvertJson([
+				{'システム商品コード':'makeshopcode'},
+				{'JANコード':'jancode'},
+				{'販売価格':'price'},
+			])
+			const resultFullProducts = await $account.getLargeListDb('products')
+			console.log(resultFullProducts)
+			if(resultFullProducts.ok){
+				const list = resultFullProducts.data
+				const updateList=[]
+				for(const val of list){
+					const updateData = uploadList.find(v=>v.jancode == val.jancode)
+					if(updateData!=undefined){
+						const price = Number(updateData.price)
+						updateList.push({
+							jancode:val.jancode,
+							price:price,
+							taxprice:Math.floor(Number(price*1.1))
+						})
+					}
+				}
+				const result = await $account.upsertDb('products',updateList,'jancode')
+				if(result.ok){
+					alert('ok')
+				}
+			}
+		},
 		/**
 		 * アップロード
 		 */
@@ -80,11 +109,18 @@
 				{'商品名':'name'},
 				{'カテゴリーパス':'category'},
 				{'数量':'quantity'},
+				{'数量':'quantity'},
 				{'製造元':'maker'},
+				{'販売価格':'price'},
 			])
+			
     	if (uploadList.length > 0) {
-				uploadData.makeshopList = [...uploadList]
+				for(let i in uploadList){
+					uploadList[i].price = Number(uploadList[i].price)
+					uploadList[i].taxprice = uploadList[i].price*1.1
+				}
 				
+				uploadData.makeshopList = [...uploadList]
 				const result = await $account.getDb('products')
 				// DBデータを取得
 				if(result.ok){
@@ -100,7 +136,9 @@
 									seriescode:val.seriescode,
 									name:val.name,
 									quantity:val.quantity,
-									makeshopQuantity:exist.quantity
+									makeshopQuantity:exist.quantity,
+									price:Number(exist.price),
+									taxprice:Math.floor(Number(exist.price)*1.1)
 								})
 							}
 						}
@@ -453,9 +491,9 @@
 				><Icon value="upload"/>アップロード</button>
 				<button class="btn" style="height:4em;"
 					onclick={async ()=>{
-						await uploadData.uploadJson()
+						await uploadData.updatePrice()
 					}}
-				><Icon value="upload"/>jsonアップロード</button>
+				><Icon value="upload"/>価格だけ更新</button>
 
 				<button class="btn" style="height:4em;"><Icon value="download"/>ダウンロード</button>
 
@@ -520,6 +558,7 @@
 						<th style="width:10em;">名前</th>
 						<th style="width:2em;">実数</th>
 						<th style="width:2em;">通販数</th>
+						<th style="width:2em;">価格</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -531,6 +570,7 @@
 						<td class="break-word">{val.name}</td>
 						<td>{val.quantity}</td>
 						<td>{val.makeshopQuantity}</td>
+						<td>{val.price}<br>{val.taxprice}</td>
 					</tr>
 					{/each}
 				</tbody>

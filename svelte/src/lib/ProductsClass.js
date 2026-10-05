@@ -9,40 +9,25 @@ export class ProductsClass{
 		//商品一覧
 		this.localProducts = new DexieClass('localProducts')
 	}
+	
 	/**
-	 * 初期化
-	 * DBを作成し、DBからデータを取得
-	 * 同一セッション内の場合は、新規読み取りしない
+	 * 商品一覧取得
 	 */
-	async initDexie(){
-		const columns = []
-		for(const data of ProductsClass.productColumns){
-			columns.push(data.key)
-		}
-		this.localProducts.init(columns)
-		
-		// データがないor一日過ぎたらDBから最新情報を取得
-		const count = await this.localProducts.count()
-		const isLocalCheck = get(account).getLs('localProducts',(24 * 60 * 60 * 1000))
-		if(isLocalCheck==null||count==0){
-			await this.localProducts.deleteStore()
-			//supabseからデータを取得
-			let list=[]
-			const MAX_ONE_PAGE_ROW=1000
-			const countResult = await get(account).getDbCount('products')
-			if(countResult.ok&&countResult.data!=null){
-				for(let i=0;i<countResult.data;i+=MAX_ONE_PAGE_ROW){
-					const result = await get(account).getDb('products',{fromIndex:i,count:MAX_ONE_PAGE_ROW})
-					if(result.ok){
-						list=[...list,...result.data]
-					}
+	static async getProductList(){
+		let list=[]
+		const MAX_ONE_PAGE_ROW=1000
+		const countResult = await get(account).getDbCount('products')
+		if(countResult.ok&&countResult.data!=null){
+			for(let i=0;i<countResult.data;i+=MAX_ONE_PAGE_ROW){
+				const result = await get(account).getDb('products',{fromIndex:i,count:MAX_ONE_PAGE_ROW})
+				if(result.ok){
+					list=[...list,...result.data]
 				}
 			}
-			this.localProducts.put(list)
-			get(account).setLs('localProducts',list.length)
 		}
+		return list
 	}
-	
+
 	/**
 	 * ローカルの商品情報取得
 	 * @param {*} jancode 

@@ -346,6 +346,42 @@ export class AccountClass{
 		}
 		return {ok:true,data:data,message:'更新成功'}
 	}
+
+
+		/**
+		 * 条件なしで全権取得
+		 */
+		async getLargeListDb(from){
+			let list=[]
+			const MAX_ONE_PAGE_ROW=1000
+			const countResult = await this.getDbCount(from)
+			if(countResult.ok&&countResult.data!=null){
+				for(let i=0;i<countResult.data;i+=MAX_ONE_PAGE_ROW){
+					const result = await this.getDb(from,{fromIndex:i,count:MAX_ONE_PAGE_ROW})
+					if(result.ok){
+						list=[...list,...result.data]
+					}else{
+						return {ok:false,data:null,message:''}
+					}
+				}
+			}
+			return {ok:true,data:list,message:''}
+		}
+
+	/**
+	 * DBのデータ一覧更新(updateDataのonConflict要素が一致している項目だけ、セットしている要素で更新)
+	 * @param {*} from
+	 * @param {*} updateData
+	 * @param {*} onConflict 
+	 * return {ok:true or false,data:data,message:message}
+	 */
+	async updateListDb(from,updateData,onConflict=''){
+		//DBの全権取得
+		const result = await this.getLargeListDb(from)
+		if(result.ok){
+			const list = result.data
+		}
+	}
 	
 	/**
 	 * データを削除
