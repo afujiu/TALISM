@@ -5,6 +5,7 @@
   import { piSound } from "$lib/Sound.js"
   import { nowDateYMD } from "$lib/Date.js"
   import { uploadCsvConvertJson,uploadJson } from "$lib/Upload.js"
+	import Encoding from "encoding-japanese"
   import Loading from "$comp/Loading.svelte"
   import Icon from "$comp/Icon.svelte"
   import Fab from "$comp/Fab.svelte"
@@ -21,6 +22,7 @@
 	let isStocklistOption = $state(false)
 	let selectedNameEditor=$state(false)
 	let beforeEditData=null
+	let numberPage = $state(1)
 
 	const MAX_ONE_PAGE_ROW=200
 
@@ -75,12 +77,18 @@
 				{'販売価格':'price'},
 			])
 			const resultFullProducts = await $account.getLargeListDb('products')
-			console.log(resultFullProducts)
 			if(resultFullProducts.ok){
 				const list = resultFullProducts.data
 				const updateList=[]
 				for(const val of list){
-					const updateData = uploadList.find(v=>v.jancode == val.jancode)
+					if(val.meta==null){
+						continue
+					}
+					
+					const updateData = uploadList.find(v =>
+    String(v.makeshopcode ?? '').replace(/\D/g, '').replace(/^0+(?=\d)/, '') ==
+    String(val.meta['makeshopCode'] ?? '').replace(/\D/g, '').replace(/^0+(?=\d)/, '')
+)
 					if(updateData!=undefined){
 						const price = Number(updateData.price)
 						updateList.push({
@@ -314,6 +322,7 @@
 	 * データ取得
 	 */
 	async function getDataList(){
+		numberPage = listData.page+1
 		beforeEditData = null
 		listData.isOpen=false
 		let where = ''
@@ -357,6 +366,47 @@
 		}
 	}
 
+	/**
+	 * MakeShop用レイアウトでダウンロード
+	 */
+	async function downloadMakeShop(){
+		// 商品を全件取得
+		const result = await $account.getLargeListDb('products')
+		if(result.ok){
+			const productsList = result.data
+			// makeshopに存在するデータのみ出力(新規登録なし)
+			let csvList = []
+			//csvList.push('"商品特定コード指定","システム商品コード","独自商品コード","JANコード","商品名","数量","販売価格","定価"')
+			csvList.push('"商品特定コード指定","システム商品コード","独自商品コード","JANコード"')
+			for(const val of productsList){
+				if(val.meta!=null&&val.meta['makeshopCode']!=null){
+					csvList.push(
+						`"0","${val.meta.makeshopCode}","${val.jancode}","${val.jancode}"`
+					)
+					// csvList.push(
+					// 	`"0","${val.meta.makeshopCode}","${val.jancode}","${val.jancode}","${val.name}","${val.quantity!=null?val.quantity:0}","${val.price}","${val.price}"`
+					// )
+				}
+			}
+			const sjisBytes = Encoding.convert(csvList.join('\r\n'), {
+				to: 'SJIS',
+				from: 'UNICODE',
+				type: 'array',
+			})
+			const blob = new Blob(
+				[new Uint8Array(sjisBytes)],
+				{ type: 'text/csv' }
+			)
+			const url = URL.createObjectURL(blob)
+			const a = document.createElement('a')
+			a.href = url
+			a.download = 'MakeShop用商品一覧.csv'
+			a.click()
+			URL.revokeObjectURL(url)
+		}
+
+	}
+	
 	/**
 	 * 一括更新
 	*/
@@ -495,7 +545,7 @@
 					}}
 				><Icon value="upload"/>価格だけ更新</button>
 
-				<button class="btn" style="height:4em;"><Icon value="download"/>ダウンロード</button>
+				<button class="btn" style="height:4em;" onclick={async()=>{await downloadMakeShop()}}><Icon value="download"/>MakeShop用ダウンロード</button>
 
 				uploadJson
 			</div>
@@ -514,6 +564,13 @@
 					}}
 				><Icon value="arrow_back_ios"></Icon></button>
       </span>
+			<span class="f1">
+				<Input type="number" bind:value={numberPage} min=1 max={Math.ceil(listData.totalCount/MAX_ONE_PAGE_ROW)} step=1 on:change={async()=>{
+						await checkEditable()
+						listData.page=numberPage-1
+						await getDataList()
+				}}/>
+			</span>
 			<!-- 進む-->
       <span class="f1">
         <button class="btn" 

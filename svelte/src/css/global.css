@@ -222,8 +222,9 @@ button.icon{
 		background:transparent;
 	}
 	
-	tbody tr:nth-child(even):not(.selected){
-		background:rgba(255,255,255,0.2);
+	tbody tr:nth-child(even) *{
+		background-color: rgba(221, 225, 239, 0.1);
+    mix-blend-mode: multiply;
 	}
 
 	tbody tr td *{

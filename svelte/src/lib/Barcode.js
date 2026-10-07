@@ -1,4 +1,10 @@
 import Quagga from "@ericblade/quagga2";
+
+/**
+ * オリジナルバーコード
+ */
+export function originalCtlBarcode(){
+}
 /**
  * バーコード処理一覧
  */

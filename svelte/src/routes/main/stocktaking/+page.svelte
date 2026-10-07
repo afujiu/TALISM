@@ -29,7 +29,7 @@
 		realProductCount:0,
 		newProductCount:0,
 	})
-	let selectedProducts = $state(null)
+	let selectedProduct = $state(null)
 	const stockTakingDb = new DexieClass('stocktaking')
 
 
@@ -86,17 +86,18 @@
 	 * 既存のDBにない場合は新規登録
 	 */
 	async function scanBarcode(){
+		selectedProduct=null
 		if(jancode!=''){
-			let existProduct = productList.find(v=>v.jancode==jancode)
-			if(existProduct!=undefined){
-				existProduct.quantity++
+			selectedProduct = productList.find(v=>v.jancode==jancode)
+			if(selectedProduct!=undefined){
+				selectedProduct.quantity++
+				await speak(`${selectedProduct.price}円。${selectedProduct.price}円`)
 			}else{
 				//既存商品マスタにない場合は、APIから取得して新規項目化
 				const result = await ProductsClass.getApiJancode(jancode)
 				if(result.length>0){
-					console.log(result)
 					const newProduct = result[0]
-					existProduct = {
+					selectedProduct = {
 						jancode:jancode,
 						name:newProduct.name,
 						price:Number(newProduct.price),
@@ -104,7 +105,8 @@
 						quantity:1,
 						id:null
 					}
-					productList.unshift(existProduct)
+					await speak(`新商品 ${newProduct.price}円。新商品 ${newProduct.price}円`)
+					productList.unshift(selectedProduct)
 				}
 			}
 		}
@@ -127,6 +129,18 @@
 			return
 		}
 		$ui.addNotification(`${$ui.selectedMenuName} 棚卸しの更新`,async()=>{
+			const fixList = await stockTakingDb.getAll()
+			let updateLst=[]
+			for(let val of fixList){
+				updateLst.push({
+					jancode:val.jancode,
+					name:val.name,
+					price:val.price,
+					taxprice:val.taxprice,
+					quantity:val.quantity
+				})
+			}
+			$account.upsertDb('products',updateLst,'jancode')
 			return {status:true,message:'更新完了'}
 		})
 	}
@@ -135,7 +149,7 @@
 	<Loading {isLoading}>
 	<article>
 		<div class="top-block">
-			<input bind:this={focusElement} type="number" bind:value={jancode} onchange={async(e)=>{scanBarcode()}}>
+			<input bind:this={focusElement} type="number" bind:value={jancode} placeholder="バーコード" onchange={async(e)=>{scanBarcode()}}>
 			<!-- 概要データ-->
 			<div class="flex">
 				<span class="f1 align-center">既存商品数:<Format type="number" comma value={overview.productCount}></Format></span>
@@ -143,8 +157,40 @@
 				<span class="f1 align-center">新商品数:<Format type="number" comma value={overview.newProductCount}></Format></span>
 			</div>
 			<!-- スキャンしたデータ-->
-			<div>
-			
+			<div class="scan-data-block">
+			{#if selectedProduct!=null}
+				<div class="flex">
+					<span class="f1">JANコード</span>
+					<span class="f6">{selectedProduct.jancode}</span>
+				</div>
+
+				<div class="flex">
+						<span class="f1">品名</span>
+						<span class="f6"><Input type="text" bind:value={selectedProduct.name}/></span>
+				</div>
+
+				<div class="flex">
+					<span class="f1">価格</span>
+					<span class="f6">
+						<Input type="number" bind:value={selectedProduct.price} on:change={async()=>{
+						selectedProduct.taxprice = Math.floor(Number(selectedProduct.price)*1.1)
+						await changeProducts(selectedProduct)
+					}}/></span>
+				</div>
+				<div class="flex">
+					<span class="f1">税込</span>
+					<span class="f6"><Input type="number" bind:value={selectedProduct.taxprice} on:change={async()=>{
+						selectedProduct.price = Math.ceil(Number(selectedProduct.taxprice)/1.1)
+						await changeProducts(selectedProduct)
+					}}/></span>
+				</div>
+				<div class="flex">
+					<span class="f1">数量</span>
+					<span class="f6"><Input type="number" bind:value={selectedProduct.quantity} on:change={async()=>{
+						await changeProducts(selectedProduct)}}/>
+					</span>
+			</div>
+				{/if}
 			</div>
 		</div>
 		<div class="bottom-block">
@@ -181,7 +227,7 @@
 		</div>
 		<Fab>
 			<span class="f1"><button class="btn" onclick={async()=>{await init()}}>初期化</button></span>
-			<span class="f1"><button class="btn confirm-btn">登録</button></span>
+			<span class="f1"><button class="btn confirm-btn" onclick={async ()=>{await confirm()}}>登録</button></span>
 		</Fab>
 	</article>
 	</Loading>
@@ -198,5 +244,7 @@
 		width:100%;
 		height:60%;
 		overflow:auto;
+	}
+	.scan-data-block{
 	}
 </style>

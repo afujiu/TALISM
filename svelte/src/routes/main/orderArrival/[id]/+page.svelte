@@ -35,7 +35,6 @@
 			if(result.ok){
 				orderData.commons = result.data[0]
 				const list = orderData.commons.detail.productsList
-				
 				orderData.list = list
 				for(let i in orderData.list){
 					if(orderData.list[i]['realQuantity']==null){
