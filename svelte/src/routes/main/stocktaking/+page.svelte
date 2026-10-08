@@ -27,6 +27,7 @@
 	let jancode = $state(null)
 	let printBarcodeMode = $state(0)
 	let productList = $state([])
+	let baseMaker = $state('')
 	const overview=$state({
 		productCount:0,
 		realProductCount:0,
@@ -136,6 +137,7 @@
 	"ファインモールド",
 	"プロゲーマー",
 	"プロテック",
+	"ホビーベース",
 	"ホビーマスター",
 	"マルイ",
 	"マルサン",
@@ -150,18 +152,21 @@
 ])
 
 	onMount(async() => {
+
 		await stockTakingDb.init(['jancode','name','price','taxprice','quantity','maker'])
 		productList = await stockTakingDb.getAll()
 		await setOverview()
 		isLoading = false
 		focus()
 	})
-
+	/**
+	 * 
+	 */
 	async function setOverview(){
 		overview.productCount=productList.length
 		const realProductCount = productList.filter(v=>v.quantity!=0).length
 		overview.realProductCount=realProductCount
-		overview.newProductCount=0
+		overview.newProductCount= productList.filter(v=>v.id==null).length
 	}
 
 	/**
@@ -171,12 +176,16 @@
 		productList = [val, ...productList.filter((item) => item.jancode !== val.jancode)]
 		await stockTakingDb.put(productList)
 		await setOverview()
+		focus()
 	}
 	/**
 	 * 初期化
 	 * productsのすべての商品情報の数量=0のデータをローカルに保存
 	 */
 	async function init(){
+		if(window.confirm("初期化しますか")==false){
+			return
+		}
 		await stockTakingDb.deleteStore()
 		const list=[]
 		const getProductList = await ProductsClass.getProductList()
@@ -217,13 +226,12 @@
 					selectedProduct = {
 						jancode:jancode,
 						name:newProduct.name,
-						price:Number(newProduct.price),
-						taxprice:Math.floor(Number(newProduct.price)*1.1),
+						price:Math.floor(Number(newProduct.price)/1.1),
+						taxprice:Number(newProduct.price),
 						maker:newProduct.brand.name,
 						quantity:1,
 						id:null
 					}
-					
 					productList.unshift(selectedProduct)
 					await speak(`新商品 ${newProduct.price}円。新商品 ${newProduct.price}円`)
 				}else{
@@ -232,7 +240,7 @@
 						name:'',
 						price:0,
 						taxprice:0,
-						maker:'',
+						maker:baseMaker,
 						quantity:1,
 						id:null
 					}
@@ -311,7 +319,10 @@
 	<article>
 	{#if printBarcodeMode==0}
 		<div class="top-block">
-			<input bind:this={focusElement} type="number" bind:value={jancode} placeholder="バーコード" onchange={async(e)=>{scanBarcode()}}>
+			<div class="flex">
+				<span class="f1"><input bind:this={focusElement} type="number" bind:value={jancode} placeholder="バーコード" onchange={async(e)=>{scanBarcode()}}></span>
+				<span class="f1"><Input type="datalist" exclass="f1" list={makerList} placeholder="製造元" bind:value={baseMaker}/></span>
+			</div>
 			<!-- 概要データ-->
 			<div class="flex">
 				<span class="f1 align-center">既存商品数:<Format type="number" comma value={overview.productCount}></Format></span>
@@ -324,7 +335,7 @@
 				<div class="flex">
 					<span class="f1">メーカー</span>
 					<span class="f6">
-						<Input type="datalist" exclass="f1" list={makerList} placeholder="製造元" bind:value={selectedProduct.maker}/></span>
+						<Input type="datalist" exclass="f1" list={makerList} placeholder="製造元" bind:value={selectedProduct.maker} on:change={async()=>{await changeProducts(selectedProduct)}}/></span>
 				</div>
 				<div class="flex">
 					<span class="f1">JANコード</span>
@@ -333,7 +344,7 @@
 
 				<div class="flex">
 						<span class="f1">品名</span>
-						<span class="f6"><Input type="text" bind:value={selectedProduct.name}/></span>
+						<span class="f6"><Input type="text" bind:value={selectedProduct.name} on:change={async()=>{await changeProducts(selectedProduct)}}/></span>
 				</div>
 
 				<div class="flex">
@@ -379,7 +390,7 @@
 						</td>
 						<td>
 							<div>
-								<Input type="number" isStep={false} bind:value={val.price}/>
+								<Input type="number" isStep={false} bind:value={val.price} on:change={async()=>{await changeProducts(val)}}/>
 							</div>
 							<div>
 								<Format type="yen" value={val.taxprice}></Format>
