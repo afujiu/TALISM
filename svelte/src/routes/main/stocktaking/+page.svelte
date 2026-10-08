@@ -35,6 +35,119 @@
 	let selectedProduct = $state(null)
 	const stockTakingDb = new DexieClass('stocktaking')
 
+  const makerList = $state([
+	"タミヤ",
+	"LayLax",
+	"ナインボール",
+	"バンダイ",
+	"東京マルイ",
+	"F.FACTORY",
+	"ハセガワ",
+	"フジミ",
+	"ファイアフライ",
+	"フリーダム・アート",
+	"KM企画",
+	"ライラクス",
+	"アオシマ",
+	"イマイ",
+	"不明",
+	"SⅡS",
+	"アリイ",
+	"アローダイナミック",
+	"アングス",
+	"システマ",
+	"キットボーイ",
+	"エレメント",
+	"ドラゴン",
+	"ABCホビー",
+	"アーテック",
+	"accutact",
+	"AFVクラブ",
+	"AIM SPORTS",
+	"Alan",
+	"ANGEL",
+	"BANDAI SPIRITS",
+	"Bushnell",
+	"C-MORE",
+	"CAW",
+	"ENCORE MODELS",
+	"EOTech",
+	"G&G",
+	"G&P",
+	"GFORCE",
+	"GSIクレオス",
+	"ガイアノーツ",
+	"HMC",
+	"HYUGA",
+	"KASSNAR",
+	"KSC",
+	"LA-GUNSHOP",
+	"LEAPERS",
+	"LONEX",
+	"NcSTAR",
+	"NEOX",
+	"NINEBALL",
+	"NITRO.Vo",
+	"NOVEL",
+	"OKパーツ",
+	"OPTION NO1",
+	"ORGA",
+	"PDI",
+	"SHS",
+	"Skirmish",
+	"TASCO",
+	"TOP",
+	"UFC",
+	"WA",
+	"XCORTECH",
+	"アカデミー",
+	"イーグル",
+	"イーグルフォース",
+	"イーグルモデル",
+	"イタレリ",
+	"ウェーブ",
+	"クライタック",
+	"クラウン",
+	"クラウンモデル",
+	"グンゼ",
+	"コスモ・エナジー",
+	"サイトロンジャパン",
+	"ジーフォース",
+	"スウィート",
+	"スプレッドワールド",
+	"スモーキーズ",
+	"セキトー",
+	"ダイアモンドリング",
+	"タスクフォース",
+	"タミックス",
+	"ディアブロ",
+	"トミー",
+	"ノーベルアームズ",
+	"ハートフォード",
+	"ハイテック",
+	"パカ山クラフト",
+	"パドック",
+	"バトラークリーク",
+	"ビッグアウト",
+	"ピットロード",
+	"ヒューガ",
+	"ファースト",
+	"ファーストファクトリー",
+	"ファインモールド",
+	"プロゲーマー",
+	"プロテック",
+	"ホビーマスター",
+	"マルイ",
+	"マルサン",
+	"マルシン",
+	"モケイパドック",
+	"桑田商会",
+	"玄人の道",
+	"童友社",
+	"日本模型",
+	"スジボリ堂",
+	"ウェーブ"
+])
 
 	onMount(async() => {
 		await stockTakingDb.init(['jancode','name','price','taxprice','quantity','maker'])
@@ -110,8 +223,21 @@
 						quantity:1,
 						id:null
 					}
-					await speak(`新商品 ${newProduct.price}円。新商品 ${newProduct.price}円`)
+					
 					productList.unshift(selectedProduct)
+					await speak(`新商品 ${newProduct.price}円。新商品 ${newProduct.price}円`)
+				}else{
+					selectedProduct = {
+						jancode:jancode,
+						name:'',
+						price:0,
+						taxprice:0,
+						maker:'',
+						quantity:1,
+						id:null
+					}
+					productList.unshift(selectedProduct)
+					await speak(`検索結果なし`)
 				}
 			}
 		}
@@ -197,7 +323,8 @@
 			{#if selectedProduct!=null}
 				<div class="flex">
 					<span class="f1">メーカー</span>
-					<span class="f6">{selectedProduct.maker}</span>
+					<span class="f6">
+						<Input type="datalist" exclass="f1" list={makerList} placeholder="製造元" bind:value={selectedProduct.maker}/></span>
 				</div>
 				<div class="flex">
 					<span class="f1">JANコード</span>
