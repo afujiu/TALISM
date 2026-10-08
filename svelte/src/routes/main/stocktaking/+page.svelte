@@ -342,30 +342,34 @@
 					<span class="f6">{selectedProduct.jancode}</span>
 				</div>
 
-				<div class="flex">
+				<div class="flex" style="margin-top:0.5em;">
 						<span class="f1">品名</span>
 						<span class="f6"><Input type="text" bind:value={selectedProduct.name} on:change={async()=>{await changeProducts(selectedProduct)}}/></span>
 				</div>
 
-				<div class="flex">
+				<div class="flex" style="margin-top:0.5em;">
 					<span class="f1">価格</span>
 					<span class="f6">
 						<Input type="number" bind:value={selectedProduct.price} on:change={async()=>{
 						selectedProduct.taxprice = Math.floor(Number(selectedProduct.price)*1.1)
 						await changeProducts(selectedProduct)
-					}}/></span>
+					}}
+					focusClear={true}/></span>
 				</div>
-				<div class="flex">
+				<div class="flex" style="margin-top:0.5em;">
 					<span class="f1">税込</span>
-					<span class="f6"><Input type="number" bind:value={selectedProduct.taxprice} on:change={async()=>{
+					<span class="f6">
+						<Input type="number" bind:value={selectedProduct.taxprice} on:change={async()=>{
 						selectedProduct.price = Math.ceil(Number(selectedProduct.taxprice)/1.1)
 						await changeProducts(selectedProduct)
-					}}/></span>
+					}}
+					focusClear={true}/></span>
 				</div>
-				<div class="flex">
+				<div class="flex" style="margin-top:0.5em;">
 					<span class="f1">数量</span>
 					<span class="f6"><Input type="number" bind:value={selectedProduct.quantity} on:change={async()=>{
-						await changeProducts(selectedProduct)}}/>
+						await changeProducts(selectedProduct)}}
+						isStep={true}/>
 					</span>
 			</div>
 				{/if}
@@ -435,12 +439,12 @@
 	}
 	.top-block{
 		width:100%;
-		height:30%;
+		height:45%;
 		position:relative;
 	}
 	.bottom-block{
 		width:100%;
-		height:60%;
+		height:55%;
 		overflow:auto;
 	}
 	.barcode-block{

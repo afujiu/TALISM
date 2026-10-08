@@ -20,7 +20,7 @@
 	 * readonly: true or false
 	 */
 	let { value = $bindable(null), type = 'text',list=[], placeholder='',exclass='',datalistId='input-datalist',
-		min=null,max=null,step=null,isStep=true,
+		min=null,max=null,step=null,isStep=true,focusClear=false,
 		readonly=false,
 
 	} = $props()
@@ -69,19 +69,25 @@
 			event,
 		})
 	}
+
+	function handleFocus() {
+		if (focusClear && !readonly) {
+			value = ''
+		}
+	}
 </script>
 {#if type=='number'}
 	<div class="number-input">
 		{#if isStep}
 			<button type="button" class="number-button" onclick={() => changeNumber(-1)} disabled={readonly}>-</button>
 		{/if}
-		<input class={`number-disabled-counter ${exclass}`} type="number" bind:value={value} onchange={handleChange} min={min} max={max} step={step} placeholder={placeholder} {readonly}/>
+		<input class={`number-disabled-counter ${exclass}`} type="number" bind:value={value} onchange={handleChange} onfocus={handleFocus} min={min} max={max} step={step} placeholder={placeholder} {readonly}/>
 		{#if isStep}
 			<button type="button" class="number-button" onclick={() => changeNumber(1)} disabled={readonly}>+</button>
 		{/if}
 	</div>
 {:else if type=='datalist'}
-	<input type="text" bind:value={value} onchange={handleChange} list={datalistId} placeholder={placeholder} class={exclass} {readonly}/>
+	<input type="text" bind:value={value} onchange={handleChange} onfocus={handleFocus} list={datalistId} placeholder={placeholder} class={exclass} {readonly}/>
 	<datalist id={datalistId}>
 		{#each list as option}
 			<option value={optionValue(option)} label={optionLabel(option)}></option>
@@ -99,11 +105,11 @@
 {:else if type=='textarea'}
 	<textarea bind:value={value} onchange={handleChange} placeholder={placeholder} class={exclass} {readonly}></textarea>
 {:else if type=='date-time'}
-	<input type="datetime-local" bind:value={value} onchange={handleChange} placeholder={placeholder} class={exclass} {readonly}/>
+	<input type="datetime-local" bind:value={value} onchange={handleChange} onfocus={handleFocus} placeholder={placeholder} class={exclass} {readonly}/>
 {:else if type=='textarea'}
 	<textarea bind:value={value} onchange={handleChange} placeholder={placeholder} class={exclass} {readonly}></textarea>
 {:else}
-	<input type={type} bind:value={value} onchange={handleChange} placeholder={placeholder} class={exclass} {readonly}/>
+	<input type={type} bind:value={value} onchange={handleChange} onfocus={handleFocus} placeholder={placeholder} class={exclass} {readonly}/>
 {/if}
 <style>
 	input,textarea,select{
