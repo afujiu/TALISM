@@ -33,6 +33,7 @@
 		"dexie": "^4.4.6",
 		"encoding-japanese": "^2.4.0",
 		"html2canvas": "^1.4.1",
+		"jsbarcode": "^3.12.3",
 		"jspdf": "^4.2.1",
 		"onnxruntime-web": "^1.27.0",
 		"potrace": "^2.1.8",
