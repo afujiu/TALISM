@@ -226,7 +226,7 @@
 					selectedProduct = {
 						jancode:jancode,
 						name:newProduct.name,
-						price:Math.floor(Number(newProduct.price)/1.1),
+						price:Math.ceil(Number(newProduct.price)/1.1),
 						taxprice:Number(newProduct.price),
 						maker:newProduct.brand.name,
 						quantity:1,
