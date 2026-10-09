@@ -320,7 +320,7 @@
 	{#if printBarcodeMode==0}
 		<div class="top-block">
 			<div class="flex">
-				<span class="f1"><input bind:this={focusElement} type="number" bind:value={jancode} placeholder="バーコード" onchange={async(e)=>{scanBarcode()}}></span>
+				<span class="f1"><input bind:this={focusElement} type="text" bind:value={jancode} placeholder="バーコード" onchange={async(e)=>{scanBarcode()}}></span>
 				<span class="f1"><Input type="datalist" exclass="f1" list={makerList} placeholder="製造元" bind:value={baseMaker}/></span>
 			</div>
 			<!-- 概要データ-->
