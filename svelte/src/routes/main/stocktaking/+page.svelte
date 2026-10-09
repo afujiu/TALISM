@@ -221,7 +221,7 @@
 			}else{
 				//既存商品マスタにない場合は、APIから取得して新規項目化
 				const result = await ProductsClass.getApiJancode(jancode)
-				if(result.length>0){
+				if(result!=null && result!=undefined && result.length>0){
 					const newProduct = result[0]
 					selectedProduct = {
 						jancode:jancode,
