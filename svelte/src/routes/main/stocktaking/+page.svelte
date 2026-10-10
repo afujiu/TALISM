@@ -8,8 +8,11 @@
   import { goto } from '$app/navigation'
 	import { page } from '$app/state'
 	import { ProductsClass } from '$lib/ProductsClass.js'
+	import {uploadCsvConvertJson,downloadCsv} from '$lib/Upload.js'
 	import { speak } from '$lib/Sound.js'
 	import Input from '$comp/Input.svelte'
+
+	
 	import Fab from '$comp/Fab.svelte'
 	import Loading from '$comp/Loading.svelte'
 	import Icon from '$comp/Icon.svelte'
@@ -17,6 +20,7 @@
   import Popup from '$comp/Popup.svelte'
 	import PrintBarcode from '$comp/PrintBarcode.svelte'
 	import PdfBlock from '$comp/PdfBlock.svelte'
+	import ContentsMenu from "$comp/ContentsMenu.svelte"
 
   /*******************
    * argument
@@ -27,6 +31,7 @@
 	let jancode = $state(null)
 	let printBarcodeMode = $state(0)
 	let productList = $state([])
+	let isOption = $state(false)
 	let baseMaker = $state('')
 	const overview=$state({
 		productCount:0,
@@ -204,6 +209,49 @@
 		productList = await stockTakingDb.getAll()
 		await setOverview()
 		focus()
+	}
+	/**
+	 * 一時保存
+	 */
+	async function stockSave(){
+		await downloadCsv(productList,'棚卸しデータ')
+		await $account.deleteDb('common',{type:'stocktaking'})
+		await $account.insertDb('common',{
+			type:'stocktaking',
+			detail:productList,
+			overview:null
+		})
+		isOption = false
+	}
+
+	/**
+	 * 保存内容を取得
+	 */
+	async function stockLoad(){
+		const result = await $account.getDb('common',{where:`type='stocktaking'`})
+		if(result.ok){
+			console.log(result.data)
+			const getProductList = result.data[0].detail
+			await stockTakingDb.deleteStore()
+			const list=[]
+			for(const val of getProductList){
+				console.log((val.id!='')?val.id:null)
+				list.push({
+					jancode:val.jancode,
+					name:val.name,
+					price:val.price,
+					taxprice:val.taxprice,
+					quantity:0,
+					maker:val.maker,
+					id:(val.id!='')?val.id:null
+				})
+			}
+			await stockTakingDb.put(list)
+			productList = await stockTakingDb.getAll()
+			await setOverview()
+			focus()
+			isOption = false
+		}
 	}
 
 
@@ -394,7 +442,10 @@
 						</td>
 						<td>
 							<div>
-								<Input type="number" isStep={false} bind:value={val.price} on:change={async()=>{await changeProducts(val)}}/>
+								<Input type="number" isStep={false} bind:value={val.price} on:change={async()=>{
+									val.taxprice = Math.floor(Number(val.price)*1.1);
+									await changeProducts(val)}}
+								/>
 							</div>
 							<div>
 								<Format type="yen" value={val.taxprice}></Format>
@@ -427,7 +478,15 @@
 <!-- バーコード印刷-->
 
 		<Fab>
-			<span class="f1"><button class="btn reset-btn" onclick={async()=>{await init()}}>初期化</button></span>
+			<span class="f1"><button class="btn reset-btn" onclick={()=>{isOption=!isOption}}><Icon value="more_horiz"></Icon></button>
+				<ContentsMenu id="isStocktakingOption" value={isOption} on:close={()=>{isOption=false}}>
+					<div class="full-width">
+						<button class="btn" style="height:4em;" onclick={async()=>{await stockSave()}}>一時保存</button>
+						<button class="btn" style="height:4em;" onclick={async()=>{await stockLoad()}}>保存取得</button>
+						<button class="btn" style="height:4em;" onclick={async()=>{await init()}}>初期化</button>
+					</div>
+				</ContentsMenu>
+			</span>
 			<span class="f1"><button class="btn" onclick={()=>{printBarcodeMode=(printBarcodeMode==0)?1:0}}>{printBarcodeMode==0?'バーコード印刷':'戻る'}</button></span>
 			<span class="f1"><button class="btn confirm-btn" onclick={async ()=>{await confirm()}}>登録</button></span>
 		</Fab>

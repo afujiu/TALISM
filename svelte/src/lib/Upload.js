@@ -208,3 +208,48 @@ export async function uploadImageBase64(){
 		height: imageSize.height,
 	}
 }
+
+/**
+ * CSVダウンロード
+ * @param {Array<Record<string, unknown>>} list
+ * 	[{hoge:'123',fuga:'456'}]の形式で送られる
+ * @param {Array<Record<string, string>>} [replaceHeader]
+ * 	ヘッダーの名前を置換[{'hoge':'ほげ'},{'fuga':'ふが}]
+ * @param {string} [splitText]
+ */
+export async function downloadCsv(list,filename, replaceHeader = [], splitText = ',') {
+	if (typeof document === 'undefined' || typeof URL === 'undefined') {
+		throw new Error('ブラウザ上で実行してください')
+	}
+	if (!Array.isArray(list)) {
+		throw new TypeError('CSVデータは配列で指定してください')
+	}
+	if (typeof splitText !== 'string' || splitText.length === 0) {
+		throw new TypeError('区切り文字は空でない文字列を指定してください')
+	}
+
+	const headers = list.length > 0 ? Object.keys(list[0]) : []
+	const headerReplacements = Object.assign({}, ...replaceHeader)
+	const escapeField = (value) => {
+		const text = value == null ? '' : String(value)
+		return `"${text.replaceAll('"', '""')}"`
+	}
+	const rows = [
+		headers.map((header) => escapeField(headerReplacements[header] ?? header)),
+		...list.map((record) => headers.map((header) => escapeField(record?.[header])))
+	]
+	const csv = `\uFEFF${rows.map((row) => row.join(splitText)).join('\r\n')}`
+	const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+	const url = URL.createObjectURL(blob)
+	const link = document.createElement('a')
+
+	try {
+		link.href = url
+		link.download = filename+'.csv'
+		document.body.appendChild(link)
+		link.click()
+	} finally {
+		link.remove()
+		URL.revokeObjectURL(url)
+	}
+}
