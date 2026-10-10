@@ -211,10 +211,42 @@
 		focus()
 	}
 	/**
+	 * ダウンロード
+	 */
+	async function download(){
+		await downloadCsv(productList,'棚卸しデータ')
+		isOption = false
+	}
+	/**
+	 * アップロード
+	 */
+	async function upload(){
+		const getProductList = await uploadCsvConvertJson()
+		await stockTakingDb.deleteStore()
+		const list=[]
+		for(const val of getProductList){
+			console.log((val.id!='')?val.id:null)
+			list.push({
+				jancode:val.jancode,
+				name:val.name,
+				price:val.price,
+				taxprice:val.taxprice,
+				quantity:0,
+				maker:val.maker,
+				id:(val.id!='')?val.id:null
+			})
+		}
+		await stockTakingDb.put(list)
+		productList = await stockTakingDb.getAll()
+		await setOverview()
+		focus()
+		isOption = false
+	}
+
+	/**
 	 * 一時保存
 	 */
 	async function stockSave(){
-		await downloadCsv(productList,'棚卸しデータ')
 		await $account.deleteDb('common',{type:'stocktaking'})
 		await $account.insertDb('common',{
 			type:'stocktaking',
@@ -223,7 +255,6 @@
 		})
 		isOption = false
 	}
-
 	/**
 	 * 保存内容を取得
 	 */
@@ -481,9 +512,11 @@
 			<span class="f1"><button class="btn reset-btn" onclick={()=>{isOption=!isOption}}><Icon value="more_horiz"></Icon></button>
 				<ContentsMenu id="isStocktakingOption" value={isOption} on:close={()=>{isOption=false}}>
 					<div class="full-width">
+						<button class="btn" style="height:4em;" onclick={async()=>{await download()}}>ダウンロード</button>
+						<button class="btn" style="height:4em;" onclick={async()=>{await upload()}}>アップロード</button>
 						<button class="btn" style="height:4em;" onclick={async()=>{await stockSave()}}>一時保存</button>
 						<button class="btn" style="height:4em;" onclick={async()=>{await stockLoad()}}>保存取得</button>
-						<button class="btn" style="height:4em;" onclick={async()=>{await init()}}>初期化</button>
+						<button class="btn delete-btn" style="height:4em;" onclick={async()=>{await init()}}>初期化</button>
 					</div>
 				</ContentsMenu>
 			</span>
