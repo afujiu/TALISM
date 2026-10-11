@@ -157,7 +157,6 @@
 ])
 
 	onMount(async() => {
-
 		await stockTakingDb.init(['jancode','name','price','taxprice','quantity','maker'])
 		productList = await stockTakingDb.getAll()
 		await setOverview()
@@ -213,6 +212,7 @@
 		await setOverview()
 		focus()
 	}
+
 	/**
 	 * ダウンロード
 	 */
@@ -285,6 +285,17 @@
 		}
 	}
 
+	/**
+	 * 商品削除
+	 */
+	async function deleteList(val){
+		if(window.confirm("削除しますか")==false){
+			return
+		}
+		await stockTakingDb.deleteWhere('jancode',val.jancode)
+		productList = await stockTakingDb.getAll()
+		await setOverview()
+	}
 
 	/**
 	 * バーコードスキャン
@@ -458,6 +469,7 @@
 			<table class="full-width">
 				<thead class="sticky">
 					<tr>
+						<th style="width:2em;">削除</th>
 						<th>メーカー<br>JANコード<br>名前</th>
 						<th style="width:4em;">価格</th>
 						<th style="width:3em;">数量</th>
@@ -466,6 +478,7 @@
 				<tbody>
 				{#each productList.slice(0, 100) as val}
 					<tr>
+						<td><button class="delete-btn btn" onclick={async()=>{await deleteList(val)}}>削除</button></td>
 						<td>
 							<div>{val.maker}</div>
 							<div>{val.jancode}</div>

@@ -170,11 +170,23 @@ export class DexieClass{
 	 * 削除
 	 */
 	async delete(primaryKey){
-			if(this._columns==null){
-					return []
-			}
-			await this._dexie[this.storeName].delete(primaryKey)
-			return await this.getAll()
+		if(this._columns==null){
+				return []
+		}
+		await this._dexie[this.storeName].delete(primaryKey)
+		return await this.getAll()
+	}
+
+	/**
+	 * 
+	 * @returns 条件付き削除
+	 */
+	async deleteWhere(key,val){
+		if(this._columns==null){
+			return []
+		}
+		await this._dexie[this.storeName].where(key).equals(val).delete()
+		return await this.getAll()
 	}
 
 	/**
