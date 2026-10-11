@@ -165,11 +165,14 @@
 		focus()
 	})
 	/**
-	 * 
+	 * データ概要をセット
 	 */
 	async function setOverview(){
 		overview.productCount=productList.length
-		const realProductCount = productList.filter(v=>v.quantity!=0).length
+		for(let val of productList){
+			console.log(val.quantity)
+		}
+		const realProductCount = productList.filter(v=>v.quantity>0).length
 		overview.realProductCount=realProductCount
 		overview.newProductCount= productList.filter(v=>v.id==null).length
 	}
@@ -225,7 +228,6 @@
 		await stockTakingDb.deleteStore()
 		const list=[]
 		for(const val of getProductList){
-			console.log((val.id!='')?val.id:null)
 			list.push({
 				jancode:val.jancode,
 				name:val.name,
@@ -261,18 +263,16 @@
 	async function stockLoad(){
 		const result = await $account.getDb('common',{where:`type='stocktaking'`})
 		if(result.ok){
-			console.log(result.data)
 			const getProductList = result.data[0].detail
 			await stockTakingDb.deleteStore()
 			const list=[]
 			for(const val of getProductList){
-				console.log((val.id!='')?val.id:null)
 				list.push({
 					jancode:val.jancode,
 					name:val.name,
 					price:val.price,
 					taxprice:val.taxprice,
-					quantity:0,
+					quantity:val.quantity,
 					maker:val.maker,
 					id:(val.id!='')?val.id:null
 				})
