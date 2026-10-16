@@ -440,7 +440,7 @@
 				<div class="flex" style="margin-top:0.5em;">
 					<span class="f1">価格</span>
 					<span class="f6">
-						<Input type="number" bind:value={selectedProduct.price} on:change={async()=>{
+						<Input type="tel" bind:value={selectedProduct.price} on:change={async()=>{
 						selectedProduct.taxprice = Math.floor(Number(selectedProduct.price)*1.1)
 						await changeProducts(selectedProduct)
 					}}
@@ -449,7 +449,7 @@
 				<div class="flex" style="margin-top:0.5em;">
 					<span class="f1">税込</span>
 					<span class="f6">
-						<Input type="number" bind:value={selectedProduct.taxprice} on:change={async()=>{
+						<Input type="tel" bind:value={selectedProduct.taxprice} on:change={async()=>{
 						selectedProduct.price = Math.ceil(Number(selectedProduct.taxprice)/1.1)
 						await changeProducts(selectedProduct)
 					}}
@@ -457,7 +457,7 @@
 				</div>
 				<div class="flex" style="margin-top:0.5em;">
 					<span class="f1">数量</span>
-					<span class="f6"><Input type="number" bind:value={selectedProduct.quantity} on:change={async()=>{
+					<span class="f6"><Input type="tel" bind:value={selectedProduct.quantity} on:change={async()=>{
 						await changeProducts(selectedProduct)}}
 						isStep={true}/>
 					</span>
