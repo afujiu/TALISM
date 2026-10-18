@@ -64,13 +64,24 @@ export class DexieClass{
 	
 	/**
 	 * データ取得
-	 * @returns 
+	 * @param {Record<string, 'asc' | 'desc'> | null} order 並び替え項目と方向（例: {jancode: 'asc'}）
+	 * @returns {Promise<Array>}
 	 */
-	async getAll (){
+	async getAll (order=null){
 		if(this._columns==null){
-				return []
+			return []
 		}
-		return await this._dexie[this.storeName].toArray()
+		const table = this._dexie[this.storeName]
+		if (order == null) return await table.toArray()
+
+		const entries = Object.entries(order)
+		const [key, direction] = entries[0] ?? []
+		if (entries.length !== 1 || !key || (direction !== 'asc' && direction !== 'desc')) {
+			throw new TypeError("並び替えは {項目名: 'asc' | 'desc'} の形式で指定してください")
+		}
+
+		const collection = table.orderBy(key)
+		return await (direction === 'desc' ? collection.reverse() : collection).toArray()
 	}
 	/**
 	 * テーブルそのものを取得

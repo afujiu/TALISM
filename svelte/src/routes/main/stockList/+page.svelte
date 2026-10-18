@@ -178,120 +178,6 @@
 
   const categoryList = ProductsClass.categoryList
 
-  const makerList = $state([
-	"タミヤ",
-	"LayLax",
-	"ナインボール",
-	"バンダイ",
-	"東京マルイ",
-	"F.FACTORY",
-	"ハセガワ",
-	"フジミ",
-	"ファイアフライ",
-	"フリーダム・アート",
-	"KM企画",
-	"ライラクス",
-	"アオシマ",
-	"イマイ",
-	"不明",
-	"SⅡS",
-	"アリイ",
-	"アローダイナミック",
-	"アングス",
-	"システマ",
-	"キットボーイ",
-	"エレメント",
-	"ドラゴン",
-	"ABCホビー",
-	"アーテック",
-	"accutact",
-	"AFVクラブ",
-	"AIM SPORTS",
-	"Alan",
-	"ANGEL",
-	"BANDAI SPIRITS",
-	"Bushnell",
-	"C-MORE",
-	"CAW",
-	"ENCORE MODELS",
-	"EOTech",
-	"G&G",
-	"G&P",
-	"GFORCE",
-	"GSIクレオス",
-	"ガイアノーツ",
-	"HMC",
-	"HYUGA",
-	"KASSNAR",
-	"KSC",
-	"LA-GUNSHOP",
-	"LEAPERS",
-	"LONEX",
-	"NcSTAR",
-	"NEOX",
-	"NINEBALL",
-	"NITRO.Vo",
-	"NOVEL",
-	"OKパーツ",
-	"OPTION NO1",
-	"ORGA",
-	"PDI",
-	"SHS",
-	"Skirmish",
-	"TASCO",
-	"TOP",
-	"UFC",
-	"WA",
-	"XCORTECH",
-	"アカデミー",
-	"イーグル",
-	"イーグルフォース",
-	"イーグルモデル",
-	"イタレリ",
-	"ウェーブ",
-	"クライタック",
-	"クラウン",
-	"クラウンモデル",
-	"グンゼ",
-	"コスモ・エナジー",
-	"サイトロンジャパン",
-	"ジーフォース",
-	"スウィート",
-	"スプレッドワールド",
-	"スモーキーズ",
-	"セキトー",
-	"ダイアモンドリング",
-	"タスクフォース",
-	"タミックス",
-	"ディアブロ",
-	"トミー",
-	"ノーベルアームズ",
-	"ハートフォード",
-	"ハイテック",
-	"パカ山クラフト",
-	"パドック",
-	"バトラークリーク",
-	"ビッグアウト",
-	"ピットロード",
-	"ヒューガ",
-	"ファースト",
-	"ファーストファクトリー",
-	"ファインモールド",
-	"プロゲーマー",
-	"プロテック",
-	"ホビーマスター",
-	"マルイ",
-	"マルサン",
-	"マルシン",
-	"モケイパドック",
-	"桑田商会",
-	"玄人の道",
-	"童友社",
-	"日本模型",
-	"スジボリ堂",
-	"ウェーブ"
-])
-
   let header = $state([
     { key: "brand", name: "ブランド" },
     { key: "category", name: "カテゴリ" },
@@ -448,7 +334,7 @@
 <Loading {isLoading}>
   <div class="container">
 		<div class="search-space flex">
-			<Input type="datalist" exclass="f1" list={makerList} placeholder="製造元" bind:value={listData.where['maker']}
+			<Input type="datalist" exclass="f1" list={ProductsClass.makerList} placeholder="製造元" bind:value={listData.where['maker']}
 				on:change={async()=>{listData.page=0;await getDataList()}}
 			/>
 			<Input type="datalist" exclass="f1" list={categoryList} placeholder="カテゴリー" bind:value={listData.where['category']}
@@ -482,7 +368,7 @@
 							{#if listData.where.maker==''}
 								<td>
 									<Input type="datalist"
-									list={makerList}
+									list={ProductsClass.makerList}
 									bind:value={data.maker}></Input></td>
 							{/if}
 							{#if listData.where.category==''}

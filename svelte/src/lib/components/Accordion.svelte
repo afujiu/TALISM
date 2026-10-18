@@ -37,7 +37,7 @@
 
 	.content {
 		max-height: 0;
-		overflow: hidden;
+		overflow: auto;
 		padding: 0 12px;
 		transition:
 			max-height .1s ease,

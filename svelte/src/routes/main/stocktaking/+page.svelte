@@ -6,7 +6,7 @@
 	import { account,ui } from '$lib/store'
 	import { DexieClass } from '$lib/DexieClass.js'
   import { goto } from '$app/navigation'
-	import { page } from '$app/state'
+	import { page, updated } from '$app/state'
 	import { ProductsClass } from '$lib/ProductsClass.js'
 	import {uploadCsvConvertJson,downloadCsv} from '$lib/Upload.js'
 	import { speak } from '$lib/Sound.js'
@@ -41,124 +41,9 @@
 	let selectedProduct = $state(null)
 	const stockTakingDb = new DexieClass('stocktaking')
 
-  const makerList = $state([
-	"タミヤ",
-	"LayLax",
-	"ナインボール",
-	"バンダイ",
-	"東京マルイ",
-	"F.FACTORY",
-	"ハセガワ",
-	"フジミ",
-	"ファイアフライ",
-	"フリーダム・アート",
-	"KM企画",
-	"ライラクス",
-	"アオシマ",
-	"イマイ",
-	"不明",
-	"SⅡS",
-	"アリイ",
-	"アローダイナミック",
-	"アングス",
-	"システマ",
-	"キットボーイ",
-	"エレメント",
-	"ドラゴン",
-	"ABCホビー",
-	"アーテック",
-	"accutact",
-	"AFVクラブ",
-	"AIM SPORTS",
-	"Alan",
-	"ANGEL",
-	"BANDAI SPIRITS",
-	"Bushnell",
-	"C-MORE",
-	"CAW",
-	"ENCORE MODELS",
-	"EOTech",
-	"G&G",
-	"G&P",
-	"GFORCE",
-	"GSIクレオス",
-	"ガイアノーツ",
-	"HMC",
-	"HYUGA",
-	"KASSNAR",
-	"KSC",
-	"LA-GUNSHOP",
-	"LEAPERS",
-	"LONEX",
-	"NcSTAR",
-	"NEOX",
-	"NINEBALL",
-	"NITRO.Vo",
-	"NOVEL",
-	"OKパーツ",
-	"OPTION NO1",
-	"ORGA",
-	"PDI",
-	"SHS",
-	"Skirmish",
-	"TASCO",
-	"TOP",
-	"UFC",
-	"WA",
-	"XCORTECH",
-	"アカデミー",
-	"イーグル",
-	"イーグルフォース",
-	"イーグルモデル",
-	"イタレリ",
-	"ウェーブ",
-	"クライタック",
-	"クラウン",
-	"クラウンモデル",
-	"グンゼ",
-	"コスモ・エナジー",
-	"サイトロンジャパン",
-	"ジーフォース",
-	"スウィート",
-	"スプレッドワールド",
-	"スモーキーズ",
-	"セキトー",
-	"ダイアモンドリング",
-	"タスクフォース",
-	"タミックス",
-	"ディアブロ",
-	"トミー",
-	"ノーベルアームズ",
-	"ハートフォード",
-	"ハイテック",
-	"パカ山クラフト",
-	"パドック",
-	"バトラークリーク",
-	"ビッグアウト",
-	"ピットロード",
-	"ヒューガ",
-	"ファースト",
-	"ファーストファクトリー",
-	"ファインモールド",
-	"プロゲーマー",
-	"プロテック",
-	"ホビーベース",
-	"ホビーマスター",
-	"マルイ",
-	"マルサン",
-	"マルシン",
-	"モケイパドック",
-	"桑田商会",
-	"玄人の道",
-	"童友社",
-	"日本模型",
-	"スジボリ堂",
-	"ウェーブ"
-])
-
 	onMount(async() => {
-		await stockTakingDb.init(['jancode','name','price','taxprice','quantity','maker'])
-		productList = await stockTakingDb.getAll()
+		await stockTakingDb.init(['jancode','name','price','taxprice','quantity','maker','update_at'])
+		productList = await stockTakingDb.getAll({update_at: 'desc'})
 		await setOverview()
 		isLoading = false
 		focus()
@@ -168,9 +53,6 @@
 	 */
 	async function setOverview(){
 		overview.productCount=productList.length
-		for(let val of productList){
-			console.log(val.quantity)
-		}
 		const realProductCount = productList.filter(v=>v.quantity>0).length
 		overview.realProductCount=realProductCount
 		overview.newProductCount= productList.filter(v=>v.id==null).length
@@ -204,11 +86,12 @@
 				taxprice:val.taxprice,
 				quantity:0,
 				maker:val.maker,
-				id:val.id
+				id:val.id,
+				update_at:null,
 			})
 		}
 		await stockTakingDb.put(list)
-		productList = await stockTakingDb.getAll()
+		productList = await stockTakingDb.getAll({update_at: 'desc'})
 		await setOverview()
 		focus()
 	}
@@ -233,13 +116,14 @@
 				name:val.name,
 				price:val.price,
 				taxprice:val.taxprice,
-				quantity:0,
+				quantity:val.quantity,
 				maker:val.maker,
-				id:(val.id!='')?val.id:null
+				id:(val.id!='')?val.id:null,
+				update_at:val.update_at,
 			})
 		}
 		await stockTakingDb.put(list)
-		productList = await stockTakingDb.getAll()
+		productList = await stockTakingDb.getAll({update_at: 'desc'})
 		await setOverview()
 		focus()
 		isOption = false
@@ -274,11 +158,12 @@
 					taxprice:val.taxprice,
 					quantity:val.quantity,
 					maker:val.maker,
-					id:(val.id!='')?val.id:null
+					id:(val.id!='')?val.id:null,
+					update_at:val.update_at,
 				})
 			}
 			await stockTakingDb.put(list)
-			productList = await stockTakingDb.getAll()
+			productList = await stockTakingDb.getAll({update_at: 'desc'})
 			await setOverview()
 			focus()
 			isOption = false
@@ -293,7 +178,7 @@
 			return
 		}
 		await stockTakingDb.deleteWhere('jancode',val.jancode)
-		productList = await stockTakingDb.getAll()
+		productList = await stockTakingDb.getAll({update_at: 'desc'})
 		await setOverview()
 	}
 
@@ -302,6 +187,7 @@
 	 * 既存のDBにない場合は新規登録
 	 */
 	async function scanBarcode(){
+		const now = Date.now()
 		selectedProduct=null
 		if(jancode!=''){
 			selectedProduct = productList.find(v=>v.jancode==jancode)
@@ -320,7 +206,8 @@
 						taxprice:Number(newProduct.price),
 						maker:newProduct.brand.name,
 						quantity:1,
-						id:null
+						id:null,
+						update_at:now,
 					}
 					productList.unshift(selectedProduct)
 					await speak(`新商品 ${newProduct.price}円。新商品 ${newProduct.price}円`)
@@ -332,7 +219,8 @@
 						taxprice:0,
 						maker:baseMaker,
 						quantity:1,
-						id:null
+						id:null,
+						update_at:now,
 					}
 					productList.unshift(selectedProduct)
 					await speak(`検索結果なし`)
@@ -358,7 +246,7 @@
 			return
 		}
 		$ui.addNotification(`${$ui.selectedMenuName} 棚卸しの更新`,async()=>{
-			const fixList = await stockTakingDb.getAll()
+			const fixList = await stockTakingDb.getAll({update_at: 'desc'})
 			let updateLst=[]
 			for(let val of fixList){
 				updateLst.push({
@@ -411,11 +299,15 @@
 		<div class="top-block">
 			<div class="flex">
 				<span class="f1"><input bind:this={focusElement} type="text" bind:value={jancode} placeholder="バーコード" onchange={async(e)=>{scanBarcode()}}></span>
-				<span class="f1"><Input type="datalist" exclass="f1" list={makerList} placeholder="製造元" bind:value={baseMaker}/></span>
+				<span class="f1"><Input type="datalist" exclass="f1" list={ProductsClass.makerList} placeholder="製造元" bind:value={baseMaker}/></span>
 			</div>
 			<!-- 概要データ-->
 			<div class="flex">
-				<span class="f1 align-center">既存商品数:<Format type="number" comma value={overview.productCount}></Format></span>
+				<span class="f1 align-center">既存商品数:
+					<Format type="number" comma value={overview.realProductCount+overview.newProductCount}></Format>/
+					<Format type="number" comma value={overview.productCount}></Format>
+				
+				</span>
 				<span class="f1 align-center">商品実数:<Format type="number" comma value={overview.realProductCount}></Format></span>
 				<span class="f1 align-center">新商品数:<Format type="number" comma value={overview.newProductCount}></Format></span>
 			</div>
@@ -425,7 +317,7 @@
 				<div class="flex">
 					<span class="f1">メーカー</span>
 					<span class="f6">
-						<Input type="datalist" exclass="f1" list={makerList} placeholder="製造元" bind:value={selectedProduct.maker} on:change={async()=>{await changeProducts(selectedProduct)}}/></span>
+						<Input type="datalist" exclass="f1" list={ProductsClass.makerList} placeholder="製造元" bind:value={selectedProduct.maker} on:change={async()=>{await changeProducts(selectedProduct)}}/></span>
 				</div>
 				<div class="flex">
 					<span class="f1">JANコード</span>
