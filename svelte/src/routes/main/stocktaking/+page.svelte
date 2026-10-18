@@ -370,7 +370,7 @@
 					</tr>
 				</thead>
 				<tbody>
-				{#each productList as val}
+				{#each productList.slice(0, 50) as val}
 					<tr>
 						<td><button class="delete-btn btn" onclick={async()=>{await deleteList(val)}}>削除</button></td>
 						<td>
