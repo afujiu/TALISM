@@ -62,8 +62,10 @@
 	 * データ変更(dexie.jsに更新)
 	*/
 	async function changeProducts(val){
-		productList = [val, ...productList.filter((item) => item.jancode !== val.jancode)]
-		await stockTakingDb.put(productList)
+		const now = Date.now()
+		val.update_at = now.toString()
+		await stockTakingDb.put([val])
+		productList = await stockTakingDb.getAll({update_at: 'desc'})
 		await setOverview()
 		focus()
 	}
@@ -194,8 +196,7 @@
 			if(selectedProduct!=undefined){
 				selectedProduct.quantity++
 				await speak(`${selectedProduct.price}円。${selectedProduct.price}円`)
-				productList.unshift(selectedProduct)
-				selectedProduct.update_at = now
+				selectedProduct.update_at = now.toString()
 			}else{
 				//既存商品マスタにない場合は、APIから取得して新規項目化
 				const result = await ProductsClass.getApiJancode(jancode)
@@ -209,9 +210,8 @@
 						maker:newProduct.brand.name,
 						quantity:1,
 						id:null,
-						update_at:now,
+						update_at:now.toString(),
 					}
-					productList.unshift(selectedProduct)
 					await speak(`新商品 ${newProduct.price}円。新商品 ${newProduct.price}円`)
 				}else{
 					selectedProduct = {
@@ -222,13 +222,13 @@
 						maker:baseMaker,
 						quantity:1,
 						id:null,
-						update_at:now,
+						update_at: now.toString(),
 					}
-					productList.unshift(selectedProduct)
 					await speak(`検索結果なし`)
 				}
 			}
 		}
+		await changeProducts(selectedProduct)
 		focus()
 		await setOverview()
 	}
@@ -370,13 +370,14 @@
 					</tr>
 				</thead>
 				<tbody>
-				{#each productList.slice(0, 100) as val}
+				{#each productList as val}
 					<tr>
 						<td><button class="delete-btn btn" onclick={async()=>{await deleteList(val)}}>削除</button></td>
 						<td>
 							<div>{val.maker}</div>
 							<div>{val.jancode}</div>
 							<div class="break-word">{val.name}</div>
+							<div>{val.update_at}</div>
 						</td>
 						<td>
 							<div>

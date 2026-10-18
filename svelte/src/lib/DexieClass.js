@@ -65,7 +65,7 @@ export class DexieClass{
 	/**
 	 * データ取得
 	 * @param {Record<string, 'asc' | 'desc'> | null} order 並び替え項目と方向（例: {jancode: 'asc'}）
-	 * @returns {Promise<Array>}
+	 * @returns {Promise<unknown[]>}
 	 */
 	async getAll (order=null){
 		if(this._columns==null){
