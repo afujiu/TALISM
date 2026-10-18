@@ -194,6 +194,7 @@
 			if(selectedProduct!=undefined){
 				selectedProduct.quantity++
 				await speak(`${selectedProduct.price}円。${selectedProduct.price}円`)
+				productList.unshift(selectedProduct)
 			}else{
 				//既存商品マスタにない場合は、APIから取得して新規項目化
 				const result = await ProductsClass.getApiJancode(jancode)
