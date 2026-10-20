@@ -132,6 +132,44 @@
 	}
 
 	/**
+	 * 入荷情報をアップロード
+	 */
+	async function uploadOrderArrival(){
+		productList = await stockTakingDb.getAll({update_at: 'desc'})
+		// jancodeがない場合は、追加
+		// jancodeありの場合で数量がある場合は、加算
+		// jancodeありで数量0の場合は無視
+		const orderList = await uploadCsvConvertJson()
+		const list = JSON.parse(JSON.stringify(productList))
+		const newProductList = orderList.filter(a => !productList.some(b => b.jancode === a.jancode))
+		const existProductList = orderList.filter(a => productList.some(b => b.jancode === a.jancode && (Number(b.quantity)>0)))
+		// 新規商品を追加
+		for(const val of newProductList){
+			list.push({
+				jancode:val.jancode,
+				name:val.name,
+				price:val.price,
+				taxprice:val.taxprice,
+				quantity:val.quantity,
+				maker:val.maker,
+				id:null,
+				update_at:val.update_at,
+			})
+		}
+		for(const val of existProductList){
+			const changeProduct = list.find(v=>v.jancode==val.jancode)
+			if(changeProduct!=undefined){
+				changeProduct.quantity=Number(changeProduct.quantity)+Number(val.quantity)
+			}
+		}
+		await stockTakingDb.put(list)
+		productList = await stockTakingDb.getAll({update_at: 'desc'})
+		await setOverview()
+		focus()
+		isOption = false
+	}
+
+	/**
 	 * 一時保存
 	 */
 	async function stockSave(){
@@ -377,7 +415,7 @@
 							<div>{val.maker}</div>
 							<div>{val.jancode}</div>
 							<div class="break-word">{val.name}</div>
-							<div>{val.update_at}</div>
+							<div><Format type="from-time" value={val.update_at}></Format></div>
 						</td>
 						<td>
 							<div>
@@ -420,10 +458,12 @@
 			<span class="f1"><button class="btn reset-btn" onclick={()=>{isOption=!isOption}}><Icon value="more_horiz"></Icon></button>
 				<ContentsMenu id="isStocktakingOption" value={isOption} on:close={()=>{isOption=false}}>
 					<div class="full-width">
+						<button class="btn" style="height:4em;" onclick={async()=>{await uploadOrderArrival()}}>入荷アップロード</button>
 						<button class="btn" style="height:4em;" onclick={async()=>{await download()}}>ダウンロード</button>
 						<button class="btn" style="height:4em;" onclick={async()=>{await upload()}}>アップロード</button>
 						<button class="btn" style="height:4em;" onclick={async()=>{await stockSave()}}>一時保存</button>
 						<button class="btn" style="height:4em;" onclick={async()=>{await stockLoad()}}>保存取得</button>
+
 						<button class="btn delete-btn" style="height:4em;" onclick={async()=>{await init()}}>初期化</button>
 					</div>
 				</ContentsMenu>

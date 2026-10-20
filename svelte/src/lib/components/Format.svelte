@@ -3,6 +3,19 @@
 	//
 	let { value = $bindable(null), type = 'number', comma = false, } = $props();
 
+	function toDate(value) {
+		if (value instanceof Date) {
+			return value
+		}
+		if (typeof value === 'number') {
+			return new Date(value)
+		}
+		if (typeof value === 'string' && /^-?\d+$/.test(value.trim())) {
+			return new Date(Number(value))
+		}
+		return new Date(value)
+	}
+
 	function formatValue() {
 		if (value === null || value === undefined || value === '') {
 			return ''
@@ -35,7 +48,7 @@
 		}
 
 		if (type === 'time') {
-			const date = value instanceof Date ? value : new Date(value)
+			const date = toDate(value)
 			if (Number.isNaN(date.getTime())) {
 				return value
 			}
@@ -43,7 +56,7 @@
 		}
 
 		if (type === 'date') {
-			const date = value instanceof Date ? value : new Date(value)
+			const date = toDate(value)
 			if (Number.isNaN(date.getTime())) {
 				return value
 			}
@@ -52,7 +65,7 @@
 		}
 
 		if (type === 'date-time') {
-			const date = value instanceof Date ? value : new Date(value)
+			const date = toDate(value)
 			if (Number.isNaN(date.getTime())) {
 				return value
 			}
@@ -65,7 +78,7 @@
 		 * 1日以上差分がある場合は、`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}(${week}) ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`この書き方で
 		*/
 		if (type === 'from-time') {
-			const date = value instanceof Date ? value : new Date(value)
+			const date = toDate(value)
 			if (Number.isNaN(date.getTime())) {
 				return value
 			}

@@ -14,6 +14,7 @@
 	import Ocr from '$comp/Ocr.svelte'
 	import Icon from '$comp/Icon.svelte'
 	import Format from '$comp/Format.svelte'
+		import {uploadCsvConvertJson,downloadCsv} from '$lib/Upload.js'
 
   /*******************
    * argument
@@ -92,13 +93,33 @@
 		$account.upsertDb('common',orderData.commons,'id')
 	}
 	/**
+	 * ダウンロード
+	 */
+	async function download(){
+		const now = Date.now()
+		const list =[]
+		for(const val of orderData.list){
+			let one ={
+				jancode:val.jancode,
+				name:val.name,
+				price:val.price,
+				taxprice:val.taxprice,
+				maker:'',
+				quantity:val.realQuantity,
+				update_at:now,
+			}
+			list.push(one)
+		}
+		await downloadCsv(list,'入荷ダウンロード')
+	}
+	/**
 	 * 一時保存
 	*/
 	async function save(){
-		if(window.confirm("一致字保存しますか")==false){
+		if(window.confirm("一時保存しますか")==false){
 			return
 		}
-		$ui.addNotification(`${$ui.selectedMenuName} 検品情報の一致字保存`,async()=>{
+		$ui.addNotification(`${$ui.selectedMenuName} 検品情報の一時保存`,async()=>{
 			await saveCommon()
 			return {status:true,message:'保存完了'}
 		})
@@ -168,6 +189,9 @@
 			</span>
 			<span class="f1">
 				<button class="btn" onclick={async()=>{await save()}}>一時保存</button>
+			</span>
+			<span class="f1">
+				<button class="btn" onclick={async()=>{await download()}}>ダウンロード</button>
 			</span>
 			<span class="f1">
 				<button class="btn confirm-btn" onclick={async()=>{await confirm()}}>確定</button>
