@@ -1,7 +1,8 @@
 <script>
 	import { onMount } from "svelte"
 	import { account,ui } from '$lib/store'
-	import {ymdhm} from '$lib/Date.js'
+	import {ymdhm,convertYmd} from '$lib/Date.js'
+	import {downloadCsv} from '$lib/Upload.js'
 	import Loading from '$comp/Loading.svelte'
 	import Fab from '$comp/Fab.svelte'
   import Spreadsheet,{SpreadsheetClass} from "$comp/Spreadsheet.svelte";
@@ -195,12 +196,35 @@
 			return {status:true,message:'更新完了'}
 		})
 	}
+	/**
+	 * ダウンロード
+	 */
+	async function download(){
+		const salesUsed=[]
+		for(const one of spread.list){
+			if(one.saleDate!=null&&one.saleDate!=''){
+				const amount = Math.ceil(one.price*0.25)
+				const saleDate = one.saleDate.split('T')[0]
+				salesUsed.push({
+					saleDate: saleDate,
+					id:one.id,
+					name:one.name,
+					price:one.price,
+					amount:amount
+				})
+			}
+		}
+		downloadCsv(salesUsed,'中古一覧',[{saleDate:'販売日'},{id:'識別番号'},{name:'内容'},{price:'販売価格'},{amount:'請求額'}])
+	}
 </script>
 <Loading isLoading={isLoading}>
 	<Spreadsheet bind:value={spread}></Spreadsheet>
 	<Fab>
 		<span class="f1">
 			<button tabindex=-1 class="btn reset-btn" disabled={isSaving} onclick={async()=>{await reset()}}>Reset</button>
+		</span>
+		<span class="f1">
+			<button tabindex=-1 class="btn" disabled={isSaving} onclick={async()=>{await download()}}>Download</button>
 		</span>
 		<span class="f1">
 			<button tabindex=-1 class="btn confirm-btn" disabled={isSaving} onclick={async()=>{await save()}}>Save</button>
