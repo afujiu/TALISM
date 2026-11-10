@@ -240,9 +240,10 @@
 				const result = await ProductsClass.getApiJancode(jancode)
 				if(result!=null && result!=undefined && result.length>0){
 					const newProduct = result[0]
+					const name = ProductsClass.replaceName(newProduct.name)
 					selectedProduct = {
 						jancode:jancode,
-						name:newProduct.name,
+						name:name,
 						price:Math.ceil(Number(newProduct.price)/1.1),
 						taxprice:Number(newProduct.price),
 						maker:newProduct.brand.name,
