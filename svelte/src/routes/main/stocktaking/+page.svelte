@@ -456,7 +456,7 @@
 <!-- バーコード印刷-->
 
 		<Fab>
-			<span class="f1"><button class="btn reset-btn" onclick={()=>{isOption=!isOption}}><Icon value="more_horiz"></Icon></button>
+			<span class="f3"><button class="btn reset-btn" onclick={()=>{isOption=!isOption}}><Icon value="more_horiz"></Icon></button>
 				<ContentsMenu id="isStocktakingOption" value={isOption} on:close={()=>{isOption=false}}>
 					<div class="full-width">
 						<button class="btn" style="height:4em;" onclick={async()=>{await uploadOrderArrival()}}>入荷アップロード</button>
