@@ -24,7 +24,7 @@
 	let beforeEditData=null
 	let numberPage = $state(1)
 
-	const MAX_ONE_PAGE_ROW=200
+	const MAX_ONE_PAGE_ROW=500
 
 	let listData = $state(
 		{

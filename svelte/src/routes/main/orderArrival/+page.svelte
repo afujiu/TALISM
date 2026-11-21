@@ -109,7 +109,7 @@
 				commonData.orderPage++
 				setTimeout(async() => {
 					await commonData.setOrderName()
-				}, 1000)
+				}, 500)
 			},
 			// 商品名が空白の場合、JANコードから名前を取得してセット
 			setOrderName:async()=>{
@@ -271,7 +271,7 @@
 					}
 				},'id')
 			}
-			
+			isLoading=false
 			return {status:true,message:'更新完了'}
 		})
 	}

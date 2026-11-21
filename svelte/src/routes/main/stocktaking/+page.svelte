@@ -11,8 +11,6 @@
 	import {uploadCsvConvertJson,downloadCsv} from '$lib/Upload.js'
 	import { speak } from '$lib/Sound.js'
 	import Input from '$comp/Input.svelte'
-
-	
 	import Fab from '$comp/Fab.svelte'
 	import Loading from '$comp/Loading.svelte'
 	import Icon from '$comp/Icon.svelte'
@@ -290,12 +288,15 @@
 			const fixList = await stockTakingDb.getAll({update_at: 'desc'})
 			let updateLst=[]
 			for(let val of fixList){
+				if(val.name=='' || val.name==null || val.price==null || Number(val.price)===0 || val.quantity==null || Number(val.quantity)===0){
+					continue
+				}
 				updateLst.push({
 					jancode:val.jancode,
 					name:val.name,
-					price:val.price,
-					taxprice:val.taxprice,
-					quantity:val.quantity,
+					price:Number(val.price),
+					taxprice:Number(val.taxprice),
+					quantity:Number(val.quantity),
 					maker:val.maker
 				})
 			}

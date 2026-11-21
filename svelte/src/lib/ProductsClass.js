@@ -209,15 +209,18 @@ export class ProductsClass{
 		// insert用データとupdate用データを選別
 		for(let val of list){
 			const existData = existList.find(v=>v.jancode == val.jancode)
+			// insertデータ
 			if(existData==undefined){
 				insertOrUpdateList.insert.push({
 					jancode:val.jancode,
 					name:val.name,
 					price:val.price,
 					taxprice:val.taxprice,
-					quantity:Number((val.realQuantity!=undefined?val.realQuantity:val.quantity))
+					quantity:Number((val.realQuantity!=undefined?val.realQuantity:val.quantity)),
+					meta:{isStocktaking:false}
 				})
 			}else{
+				//updateデータ
 				insertOrUpdateList.update.push({
 					jancode:val.jancode,
 					quantity:Number((val.realQuantity!=undefined?val.realQuantity:val.quantity))+Number(existData.quantity)
@@ -336,7 +339,6 @@ export class ProductsClass{
 			"AIM SPORTS",
 			"Alan",
 			"ANGEL",
-			"BANDAI SPIRITS",
 			"Bushnell",
 			"C-MORE",
 			"CAW",
@@ -358,7 +360,6 @@ export class ProductsClass{
 			"NEOX",
 			"NINEBALL/ナインボール",
 			"NITRO.Vo",
-			"NOVEL",
 			"OKパーツ",
 			"OPTION NO1",
 			"ORGA",
@@ -383,7 +384,6 @@ export class ProductsClass{
 			"グンゼ",
 			"コスモ・エナジー",
 			"サイトロンジャパン",
-			"ジーフォース",
 			"スウィート",
 			"スプレッドワールド",
 			"スモーキーズ",
@@ -401,7 +401,6 @@ export class ProductsClass{
 			"バトラークリーク",
 			"ビッグアウト",
 			"ピットロード",
-			"ヒューガ",
 			"ファースト",
 			"ファーストファクトリー",
 			"ファインモールド",
@@ -409,7 +408,6 @@ export class ProductsClass{
 			"プロテック",
 			"ホビーベース",
 			"ホビーマスター",
-			"マルイ",
 			"マルサン",
 			"マルシン",
 			"モケイパドック",
@@ -418,7 +416,35 @@ export class ProductsClass{
 			"童友社",
 			"日本模型",
 			"スジボリ堂",
-			"ウェーブ"
+			"ウェーブ",
+			"ストリームライト",
+			"テトラ",
+			"TANAKA",
+			"TMcraft",
+			"アンクス",
+			"K-HOBBY",
+			"宮川ゴム",
+			"MARUZEN（エアガン）",
+			"MosquitoMolcs",
+			"KAWADA",
+			"ナガノ",
+			"ミネシマ",
+			"スタジオミド",
+			"コニシ",
+			"ブランド登録なし",
+			"京商",
+			"MODELERs",
+			"BEAUTY NAILER",
+			"亀島商店",
+			"川合商会",
+			"REVELL MONOGRAM",
+			"MITSUWA MODEL",
+			"SANWA",
+			"KOTOBUKIYA",
+			"ザ・スナップキット",
+			"インターアライド",
+			"FUTABA",
+			"AMT"
 		]
 	}
 
@@ -434,6 +460,21 @@ export class ProductsClass{
 		if (normalizedMaker.includes('ミニ四駆')) return 'タミヤ'
 		if (/ウェーブ\s*４９４３２０９１１５６３１/.test(normalizedMaker)) return 'ウェーブ'
 		if (/ブランド登録なし/i.test(normalizedMaker)) return ''
+		switch (normalizedMaker.trim().toUpperCase()) {
+			case 'FIREFLY(ファイアフライ)': return 'ファイアフライ'
+			case 'TOKYO MARUI': return '東京マルイ'
+			case 'フジミ模型': return 'フジミ'
+			case 'GAIANOTES': return 'ガイアノーツ'
+			case 'REVOLVER': return 'TANAKA'
+			case 'GSI':
+			case 'MR HOBBY': return 'GSIクレオス'
+			case 'ミネシマ':
+			case 'MINESHIMA': return 'ミネシマ'
+			case 'ジーフォース': return 'GFORCE'
+			case 'ヒューガ': return 'HYUGA'
+			case 'マルイ': return '東京マルイ'
+			case 'NOVEL': return 'ノーベルアームズ'
+		}
 		return normalizedMaker
 	}
 

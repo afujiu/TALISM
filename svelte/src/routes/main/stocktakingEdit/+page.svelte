@@ -23,12 +23,12 @@
 	 */
 	async function upload(){
 		data = await uploadCsvConvertJson()
-		 const now = Date.now()
 		for(const val of data){
 			val.name = ProductsClass.replaceName(val.name)
 			val.maker = ProductsClass.replaceMaker(val.maker)
-			val['update_at'] = now
+			val.update_at = val.update_at
 		}
+		console.log(data)
 	}
 	/**
 	 * 修正
@@ -58,6 +58,7 @@
 <table>
 	<thead>
 		<tr>
+			<th>No</th>
 			<th>JANコード</th>
 			<th style="width:40em;">名前</th>
 			<th style="width:10em;">メーカー</th>
@@ -65,6 +66,7 @@
 			<th>税込</th>
 			<th>数量</th>
 			<th>id</th>
+			<th>更新日</th>
 		</tr>
 	</thead>
 	<tbody>
@@ -72,18 +74,22 @@
 		{#if !isMakerNull || (isMakerNull&&data[idx].maker=='不明')}
 		<tr>
 			<td>
+				{idx+1}
+			</td>
+			<td>
 				<input type="text" bind:value={data[idx].jancode}>
 			</td>
 			<td class="break-word">
 				<input type="text" bind:value={data[idx].name}>
 			</td>
 			<td>
-				<input type="text" bind:value={data[idx].maker}>
+				<Input type="datalist" exclass="f1" list={ProductsClass.makerList} placeholder="製造元" bind:value={data[idx].maker}/>
 			</td>
 			<td>{val.price}</td>
 			<td>{val.taxprice}</td>
 			<td>{val.quantity}</td>
 			<td>{val.id}</td>
+			<td>{val.update_at}</td>
 		</tr>
 		{/if}
 	{/each}
