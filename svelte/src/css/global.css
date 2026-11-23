@@ -306,3 +306,12 @@ button.icon{
 		cursor:pointer;
 		border:none;
 	}
+	.bg-base1{
+		background:var(--base1);
+	}
+	.bg-base2{
+		background:var(--base2);
+	}
+	.bg-main1{
+		background:var(--main1);
+	}

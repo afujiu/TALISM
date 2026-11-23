@@ -191,7 +191,40 @@
 				{id:'price_5',px:92,py:(100/6)*4,pw:8,ph:(100/6),type:'number'},
 				{id:'price_6',px:92,py:(100/6)*5,pw:8,ph:(100/6),type:'number'},
 			]},
-			{name:'名古屋ガンショップ',struct:[]}
+			{name:'名古屋ガンショップ',struct:[
+				{id:'jancode_1',px:0,py:0,pw:15,ph:(100/10),type:'text'},
+				{id:'jancode_2',px:0,py:(100/10)*1,pw:15,ph:(100/10),type:'text'},
+				{id:'jancode_3',px:0,py:(100/10)*2,pw:15,ph:(100/10),type:'text'},
+				{id:'jancode_4',px:0,py:(100/10)*3,pw:15,ph:(100/10),type:'text'},
+				{id:'jancode_5',px:0,py:(100/10)*4,pw:15,ph:(100/10),type:'text'},
+				{id:'jancode_6',px:0,py:(100/10)*5,pw:15,ph:(100/10),type:'text'},
+				{id:'jancode_7',px:0,py:(100/10)*6,pw:15,ph:(100/10),type:'text'},
+				{id:'jancode_8',px:0,py:(100/10)*7,pw:15,ph:(100/10),type:'text'},
+				{id:'jancode_9',px:0,py:(100/10)*8,pw:15,ph:(100/10),type:'text'},
+				{id:'jancode_10',px:0,py:(100/10)*9,pw:15,ph:(100/10),type:'text'},
+
+				{id:'quantity_1',px:82,py:0,pw:8,ph:(100/10),type:'number'},
+				{id:'quantity_2',px:82,py:(100/10)*1,pw:8,ph:(100/10),type:'number'},
+				{id:'quantity_3',px:82,py:(100/10)*2,pw:8,ph:(100/10),type:'number'},
+				{id:'quantity_4',px:82,py:(100/10)*3,pw:8,ph:(100/10),type:'number'},
+				{id:'quantity_5',px:82,py:(100/10)*4,pw:8,ph:(100/10),type:'number'},
+				{id:'quantity_6',px:82,py:(100/10)*5,pw:8,ph:(100/10),type:'number'},
+				{id:'quantity_7',px:82,py:(100/10)*6,pw:8,ph:(100/10),type:'number'},
+				{id:'quantity_8',px:82,py:(100/10)*7,pw:8,ph:(100/10),type:'number'},
+				{id:'quantity_9',px:82,py:(100/10)*8,pw:8,ph:(100/10),type:'number'},
+				{id:'quantity_10',px:82,py:(100/10)*9,pw:8,ph:(100/10),type:'number'},
+
+				{id:'price_1',px:90,py:0,pw:10,ph:(100/10),type:'number'},
+				{id:'price_2',px:90,py:(100/10)*1,pw:10,ph:(100/10),type:'number'},
+				{id:'price_3',px:90,py:(100/10)*2,pw:10,ph:(100/10),type:'number'},
+				{id:'price_4',px:90,py:(100/10)*3,pw:10,ph:(100/10),type:'number'},
+				{id:'price_5',px:90,py:(100/10)*4,pw:10,ph:(100/10),type:'number'},
+				{id:'price_6',px:90,py:(100/10)*5,pw:10,ph:(100/10),type:'number'},
+				{id:'price_7',px:90,py:(100/10)*6,pw:10,ph:(100/10),type:'number'},
+				{id:'price_8',px:90,py:(100/10)*7,pw:10,ph:(100/10),type:'number'},
+				{id:'price_9',px:90,py:(100/10)*8,pw:10,ph:(100/10),type:'number'},
+				{id:'price_10',px:90,py:(100/10)*9,pw:10,ph:(100/10),type:'number'},
+			]}
 		])
 
 	onMount(async () => {
@@ -351,7 +384,7 @@
 				{#each commonData.oneOrderList as val}
 					<tr>
 						<td>{val.deliverySource}<br>P{val.page}<br>No.{val.no}</td>
-						<td><Input type="number" bind:value={val.jancode} on:change={async()=>{await changeJancode(val)}} isStep={false}/></td>
+						<td><Input type="text" bind:value={val.jancode} on:change={async()=>{await changeJancode(val)}} isStep={false}/></td>
 						<td><Input type="text"  bind:value={val.name}/></td>
 						<td>
 							<div>

@@ -343,6 +343,9 @@
 					if(extraction.text!=''){
 						let text = String(extraction.text ?? '').trim()
 						if(block.type === 'number'){
+							text = text.replaceAll('¥', '')
+							text = text.replaceAll('￥', '')
+							text = text.replaceAll('円', '')
 							text = text.replaceAll(',', '')
 							text = text.replaceAll('.', '')
 							text = text.replaceAll(' ', '')

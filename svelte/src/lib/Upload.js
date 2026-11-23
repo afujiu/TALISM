@@ -1,3 +1,5 @@
+import Encoding from 'encoding-japanese'
+
 /**
  * csvをアップロードしてjson形式で返す
  * @param {Array<Record<string, string>>} [replaceHeader]
@@ -217,7 +219,7 @@ export async function uploadImageBase64(){
  * 	ヘッダーの名前を置換[{'hoge':'ほげ'},{'fuga':'ふが}]
  * @param {string} [splitText]
  */
-export async function downloadCsv(list,filename, replaceHeader = [], splitText = ',') {
+export async function downloadCsv(list,filename,{replaceHeader = [],splitText = ',',encoding='utf-8'}={}) {
 	if (typeof document === 'undefined' || typeof URL === 'undefined') {
 		throw new Error('ブラウザ上で実行してください')
 	}
@@ -226,6 +228,10 @@ export async function downloadCsv(list,filename, replaceHeader = [], splitText =
 	}
 	if (typeof splitText !== 'string' || splitText.length === 0) {
 		throw new TypeError('区切り文字は空でない文字列を指定してください')
+	}
+	const normalizedEncoding = String(encoding).toLowerCase()
+	if (!['utf-8', 'shift-jis'].includes(normalizedEncoding)) {
+		throw new TypeError('文字コードは utf-8 または shift-jis を指定してください')
 	}
 
 	const headers = list.length > 0 ? Object.keys(list[0]) : []
@@ -238,8 +244,16 @@ export async function downloadCsv(list,filename, replaceHeader = [], splitText =
 		headers.map((header) => escapeField(headerReplacements[header] ?? header)),
 		...list.map((record) => headers.map((header) => escapeField(record?.[header])))
 	]
-	const csv = `\uFEFF${rows.map((row) => row.join(splitText)).join('\r\n')}`
-	const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+	const csv = rows.map((row) => row.join(splitText)).join('\r\n')
+	const blob = normalizedEncoding === 'shift-jis'
+		? new Blob([
+			new Uint8Array(Encoding.convert(csv, {
+				to: 'SJIS',
+				from: 'UNICODE',
+				type: 'array'
+			}))
+		], { type: 'text/csv;charset=shift_jis' })
+		: new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' })
 	const url = URL.createObjectURL(blob)
 	const link = document.createElement('a')
 
