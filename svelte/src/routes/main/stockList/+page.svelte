@@ -147,7 +147,7 @@
 			// 新規は強制非表示
 			let makeshopCode = ''
 			if(val.meta.makeshopCode!=null){
-				makeshopCode = val.meta.makeshopCode
+				makeshopCode = val.meta.maekshop.code
 			}else{
 				isShow = false
 			}
@@ -179,7 +179,7 @@
 				{'showPrice':'販売価格'},
 				{'quantity':'数量'},
 				{'maker':'製造元'},
-				{'isShow':'商品表示可否'}
+				{'isShow':'商品表示可否'},
 			],encoding:'shift-jis'}
 	)
 	}
