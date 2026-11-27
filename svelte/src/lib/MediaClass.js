@@ -1,4 +1,3 @@
-import { removeBackground } from '@imgly/background-removal';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
 /**
@@ -89,6 +88,9 @@ export class MediaClass{
 	 * @returns {Promise<{src:string,size:number}>}
 	 */
 	static async base64RemoveBackground(base64,color='#FFFFFF'){
+		if (typeof window === 'undefined') {
+			throw new Error('背景除去はブラウザー上で実行してください')
+		}
 		if (typeof base64 !== 'string' || base64.trim() === '') {
 			throw new Error('base64画像データが空です')
 		}
@@ -99,7 +101,8 @@ export class MediaClass{
 		const input = base64.startsWith('data:')
 			? base64
 			: `data:image/jpeg;base64,${base64}`
-		const foregroundBlob = await removeBackground(input)
+		const { removeBackground } = await import('@imgly/background-removal')
+		const foregroundBlob = await removeBackground(input, { device: 'cpu' })
 		const foreground = await createImageBitmap(foregroundBlob)
 		const canvas = document.createElement('canvas')
 		canvas.width = foreground.width
