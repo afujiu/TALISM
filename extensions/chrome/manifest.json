@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "TALISM",
+  "description": "TALISM Chrome拡張機能",
+  "version": "0.1.0",
+  "action": {
+    "default_title": "TALISM",
+    "default_popup": "popup/popup.html"
+  },
+  "options_page": "options/options.html",
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "tabs"
+  ]
+}

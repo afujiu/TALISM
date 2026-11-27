@@ -81,6 +81,34 @@
     value.splice(selectedMediaIdx, 1)
     selectedMediaIdx = -1
   }
+	/**画像の背景を消去*/
+	async function removeBackGround(){
+    const data = value[selectedMediaIdx]
+    baseSizeSrc.src = data.src
+    baseSizeSrc.size = data.size
+    let result
+
+    //data.srcがbase64ではない場合、base64Funcからbase64を取得して代入
+    if (data.src && !data.src.startsWith("data:")) {
+      const urlBase64 = await base64Func(data.name)
+      if (typeof urlBase64 === "string" && urlBase64.trim() !== "") {
+        data.src = urlBase64
+      }
+    }
+
+    if (data.mime === "video") {
+      result = await MediaClass.convertVideoToWebm(data.src)
+      const nameArray = data.name.split(".")
+      data.name = nameArray[0] + ".webm"
+    } else {
+			console.log(data.src)
+      result = await MediaClass.base64RemoveBackground(data.src)
+    }
+		console.log(result)
+    data.src = result.src
+    data.size = result.size
+	}
+
   /**リサイズ*/
   async function resizeImage() {
     const data = value[selectedMediaIdx]
@@ -256,6 +284,16 @@
 			</button>
 		</span>
     {/if}
+		<span class="f1">
+			<button
+				class="btn"
+				onclick={async () => {
+					await removeBackGround()
+				}}
+			>
+			<Icon value="crop_free"></Icon>背景消去
+			</button>
+		</span>
     <!--リサイズ-->
 		<span class="f1">
 			<button

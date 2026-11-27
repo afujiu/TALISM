@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>TALISM 設定</title>
+    <link rel="stylesheet" href="options.css">
+  </head>
+  <body>
+    <main>
+      <h1>TALISM 設定</h1>
+      <label>
+        最大巡回ページ数
+        <input id="max-pages" type="number" min="1" max="500" value="20">
+      </label>
+      <label>
+        ページ移動間隔（ミリ秒）
+        <input id="delay-ms" type="number" min="0" max="60000" step="100" value="800">
+      </label>
+      <p id="saved" role="status"></p>
+    </main>
+    <script src="options.js"></script>
+  </body>
+</html>

@@ -1,3 +1,4 @@
+import { removeBackground } from '@imgly/background-removal';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
 /**
@@ -79,6 +80,61 @@ export class MediaClass{
 		context.filter = 'grayscale(100%)'
 		context.drawImage(image, 0, 0)
 		return canvas.toDataURL('image/png')
+	}
+
+	/**
+	 * background-removal-jsで背景を除去し、指定色を合成したJPEGを返す
+	 * @param {string} base64
+	 * @param {string} [color='#FFFFFF'] 背景色
+	 * @returns {Promise<{src:string,size:number}>}
+	 */
+	static async base64RemoveBackground(base64,color='#FFFFFF'){
+		if (typeof base64 !== 'string' || base64.trim() === '') {
+			throw new Error('base64画像データが空です')
+		}
+		if (typeof color !== 'string' || !CSS.supports('color', color)) {
+			throw new Error('背景色の指定が不正です')
+		}
+
+		const input = base64.startsWith('data:')
+			? base64
+			: `data:image/jpeg;base64,${base64}`
+		const foregroundBlob = await removeBackground(input)
+		const foreground = await createImageBitmap(foregroundBlob)
+		const canvas = document.createElement('canvas')
+		canvas.width = foreground.width
+		canvas.height = foreground.height
+		const context = canvas.getContext('2d')
+		try {
+			if (!context) throw new Error('Canvas 2Dコンテキスト取得失敗')
+			context.fillStyle = color
+			context.fillRect(0, 0, canvas.width, canvas.height)
+			context.drawImage(foreground, 0, 0)
+		} finally {
+			foreground.close()
+		}
+
+		/** @type {Promise<Blob>} */
+		const blobPromise = new Promise((resolve, reject) => {
+			canvas.toBlob((result) => {
+				if (result) resolve(result)
+				else reject(new Error('画像変換失敗'))
+			}, 'image/jpeg', 0.92)
+		})
+		const blob = await blobPromise
+		/** @type {Promise<string>} */
+		const srcPromise = new Promise((resolve, reject) => {
+			const reader = new FileReader()
+			reader.onload = () => {
+				if (typeof reader.result === 'string') resolve(reader.result)
+				else reject(new Error('base64変換失敗'))
+			}
+			reader.onerror = () => reject(new Error('base64変換失敗'))
+			reader.readAsDataURL(blob)
+		})
+		const src = await srcPromise
+
+		return { src, size: blob.size }
 	}
 
 	/**

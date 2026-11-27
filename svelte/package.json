@@ -25,6 +25,7 @@
 		"vite": "^8.0.16"
 	},
 	"dependencies": {
+		"@imgly/background-removal": "1.5.7",
 		"@ericblade/quagga2": "^1.12.1",
 		"@ffmpeg/ffmpeg": "^0.12.15",
 		"@ffmpeg/util": "^0.12.2",
