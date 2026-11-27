@@ -101,10 +101,8 @@
       const nameArray = data.name.split(".")
       data.name = nameArray[0] + ".webm"
     } else {
-			console.log(data.src)
       result = await MediaClass.base64RemoveBackground(data.src)
     }
-		console.log(result)
     data.src = result.src
     data.size = result.size
 	}
@@ -284,16 +282,6 @@
 			</button>
 		</span>
     {/if}
-		<span class="f1">
-			<button
-				class="btn"
-				onclick={async () => {
-					await removeBackGround()
-				}}
-			>
-			<Icon value="crop_free"></Icon>背景消去
-			</button>
-		</span>
     <!--リサイズ-->
 		<span class="f1">
 			<button
@@ -303,6 +291,17 @@
 				}}
 			>
 			<Icon value="crop_free"></Icon>サイズ縮小
+			</button>
+		</span>
+		<!--背景消去-->
+		<span class="f1">
+			<button
+				class="btn"
+				onclick={async () => {
+					await removeBackGround()
+				}}
+			>
+			<Icon value="layers_clear"></Icon>背景消去
 			</button>
 		</span>
     <!--メディアの順番を先頭にする-->

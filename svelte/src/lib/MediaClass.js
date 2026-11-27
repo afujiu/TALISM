@@ -85,9 +85,9 @@ export class MediaClass{
 	 * background-removal-jsで背景を除去し、指定色を合成したJPEGを返す
 	 * @param {string} base64
 	 * @param {string} [color='#FFFFFF'] 背景色
-	 * @returns {Promise<{src:string,size:number}>}
+	 * @returns {Promise<{src:string,size:number}>} 230 230 232
 	 */
-	static async base64RemoveBackground(base64,color='#FFFFFF'){
+	static async base64RemoveBackground(base64,color='#E6E6E8'){
 		if (typeof window === 'undefined') {
 			throw new Error('背景除去はブラウザー上で実行してください')
 		}
